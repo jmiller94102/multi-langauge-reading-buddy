@@ -13,8 +13,40 @@ app.use(express.json());
 // Import Azure OpenAI
 const { AzureOpenAI } = require('openai');
 
+// Import LangSmith for observability
+const { Client } = require('langsmith');
+const { wrapOpenAI } = require('langsmith/wrappers/openai');
+
 // Initialize Azure OpenAI client
 let azureClient = null;
+let langsmithClient = null;
+
+function initializeLangSmith() {
+  const langchainApiKey = process.env.LANGCHAIN_API_KEY;
+  const langchainProject = process.env.LANGCHAIN_PROJECT || 'default';
+  const langchainTracing = process.env.LANGCHAIN_TRACING_V2 === 'true';
+
+  console.log('🔍 Checking LangSmith credentials...');
+  console.log(`   Tracing Enabled: ${langchainTracing ? '✅ Yes' : '❌ No'}`);
+  console.log(`   API Key: ${langchainApiKey ? '✅ Found' : '❌ Missing'} (${langchainApiKey ? langchainApiKey.substring(0, 12) + '...' : 'N/A'})`);
+  console.log(`   Project: ${langchainProject}`);
+
+  if (!langchainApiKey || !langchainTracing) {
+    console.warn('❌ LangSmith not configured or tracing disabled');
+    return null;
+  }
+
+  try {
+    langsmithClient = new Client({
+      apiKey: langchainApiKey,
+    });
+    console.log('✅ LangSmith client initialized successfully');
+    return langsmithClient;
+  } catch (error) {
+    console.error('❌ Failed to initialize LangSmith client:', error);
+    return null;
+  }
+}
 
 function initializeAzureOpenAI() {
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
@@ -35,12 +67,21 @@ function initializeAzureOpenAI() {
   }
 
   try {
-    azureClient = new AzureOpenAI({
+    const baseClient = new AzureOpenAI({
       apiKey: apiKey,
       endpoint: endpoint,
       apiVersion: apiVersion,
     });
-    console.log('✅ Azure OpenAI client initialized successfully');
+
+    // Wrap with LangSmith tracing if available
+    if (langsmithClient) {
+      azureClient = wrapOpenAI(baseClient);
+      console.log('✅ Azure OpenAI client initialized with LangSmith tracing');
+    } else {
+      azureClient = baseClient;
+      console.log('✅ Azure OpenAI client initialized (no tracing)');
+    }
+
     return azureClient;
   } catch (error) {
     console.error('❌ Failed to initialize Azure OpenAI client:', error);
@@ -49,6 +90,7 @@ function initializeAzureOpenAI() {
 }
 
 // Initialize on startup
+initializeLangSmith();
 initializeAzureOpenAI();
 
 // Story generation endpoint
@@ -1633,6 +1675,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     azureOpenAI: azureClient ? 'connected' : 'not configured',
+    langsmith: langsmithClient ? 'enabled' : 'disabled',
+    langsmithProject: process.env.LANGCHAIN_PROJECT || 'default',
     timestamp: new Date().toISOString()
   });
 });
