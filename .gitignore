@@ -1,0 +1,271 @@
+# ============================================================================
+# COMPREHENSIVE .GITIGNORE FOR MULTI-MODAL RAG PROJECT
+# Prevents common mistakes when pushing to remote repositories
+# ============================================================================
+
+# ============================================================================
+# ENVIRONMENT AND CONFIGURATION FILES
+# ============================================================================
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+*.env
+config.local.*
+secrets.*
+credentials.*
+api_keys.*
+
+# ============================================================================
+# PYTHON
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ============================================================================
+# NODE.JS AND FRONTEND
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+.nuxt/
+dist/
+.cache/
+.parcel-cache/
+.vite/
+coverage/
+
+# ============================================================================
+# LARGE MEDIA FILES (PREVENT ACCIDENTAL PUSHES)
+# ============================================================================
+# Audio files
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.m4a
+*.wma
+
+# Video files
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.m4v
+
+# Image files (large)
+*.psd
+*.ai
+*.eps
+*.tiff
+*.tif
+*.bmp
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+
+# ============================================================================
+# AI/ML MODELS AND DATA (PREVENT HUGE FILE PUSHES)
+# ============================================================================
+# Model files
+models/
+*.gguf
+*.bin
+*.safetensors
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pb
+*.onnx
+*.tflite
+*.pt
+*.pth
+*.ckpt
+
+# Vector databases and embeddings
+chroma_db/
+qdrant_storage/
+faiss_index/
+embeddings/
+vector_store/
+*.index
+*.faiss
+
+# Training data and datasets
+data/raw/
+data/processed/
+datasets/
+*.csv
+*.json
+*.jsonl
+*.parquet
+*.feather
+
+# ============================================================================
+# GENERATED CONTENT AND OUTPUTS
+# ============================================================================
+podcasts/
+temp_audio/
+output/
+generated/
+results/
+experiments/output/
+.flashrank_cache*
+*.generated.*
+
+# ============================================================================
+# EXAMPLE PROJECTS AND ARCHIVED CODE (AS REQUESTED)
+# ============================================================================
+example_projects/
+example_projects_ARCHIVED/
+children_game_ARCHIVED/
+
+# ============================================================================
+# DEVELOPMENT AND TESTING FILES
+# ============================================================================
+# Test files
+test_*.py
+*_test.py
+*_fix.py
+emergency_*.py
+debug_*.py
+temp_*.py
+scratch_*.py
+
+# Jupyter notebooks (checkpoints)
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================================================
+# DATABASES
+# ============================================================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ============================================================================
+# LOGS AND MONITORING
+# ============================================================================
+*.log
+logs/
+log/
+*.out
+*.err
+
+# ============================================================================
+# IDEs AND EDITORS
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vim/
+.emacs.d/
+
+# ============================================================================
+# OS FILES
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ============================================================================
+# DOCKER AND CONTAINERS
+# ============================================================================
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# ============================================================================
+# CLOUD AND DEPLOYMENT
+# ============================================================================
+.terraform/
+*.tfstate
+*.tfstate.backup
+.serverless/
+.aws/
+.gcp/
+.azure/
+
+# ============================================================================
+# TEMPORARY AND CACHE FILES
+# ============================================================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+.cache/
+cache/
+tmp/
+temp/
+
+# ============================================================================
+# PROJECT-SPECIFIC EXCLUSIONS
+# ============================================================================
+# RAG system specific
+chromadb/
+qdrant_data/
+vector_collections/
+embeddings_cache/
+retrieval_cache/
+
+# Audio generation testing
+test-audio-*.mp3
+audio_samples/
+tts_output/
+
+# Documentation builds
+docs/_build/
+docs/build/
+site/

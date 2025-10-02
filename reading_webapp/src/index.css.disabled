@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Base reset and typography */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', 'Noto Sans KR', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: 'Inter', 'Noto Sans KR', system-ui, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Korean text styling */
+.korean-text {
+  font-family: 'Noto Sans KR', sans-serif;
+  line-height: 1.6;
+}
+
+/* Mixed language text styling */
+.mixed-language {
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
