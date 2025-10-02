@@ -12,8 +12,8 @@ export interface AppSettings {
 
   // Language & Localization
   primaryLanguage: 'English';
-  secondaryLanguage: 'Korean';
-  languageBlendLevel: number; // 0-10 (0=100% English, 10=100% Korean)
+  secondaryLanguage: 'Korean' | 'Japanese' | 'Mandarin' | 'Italian' | 'Spanish' | 'Arabic';
+  languageBlendLevel: number; // 0-10 (0=100% English, 10=100% secondary language)
 
   // Theme & UI
   skinTheme: 'Space' | 'Jungle' | 'DeepSea' | 'Minecraft' | 'Tron';
@@ -25,7 +25,7 @@ export interface AppSettings {
 
 export interface UserProfile {
   gradeLevel: '3rd' | '4th' | '5th' | '6th';
-  languageProgress: number; // 0-100 (English to Korean progression)
+  languageProgress: number; // 0-100 (English to secondary language progression)
   points: number;
   level: number;
   achievements: Achievement[];

@@ -4,6 +4,7 @@ import type { Quiz } from './types/content'
 import { ProfessionalAudioPlayer } from './components/language-support/ProfessionalAudioPlayer'
 import { QuizHintSystem } from './components/language-support/QuizHintSystem'
 import { AnswerValidationFeedback } from './components/language-support/AnswerValidationFeedback'
+import { LanguageSelector } from './components/settings/LanguageSelector'
 
 // Types for backend API calls
 interface StoryData {
@@ -94,9 +95,36 @@ function App() {
   const [quizDifficulty, setQuizDifficulty] = useState('Intermediate')
   const [customVocabulary, setCustomVocabulary] = useState('')
 
-  // Korean Language Settings
+  // Multi-Language Settings
+  const [selectedLanguage, setSelectedLanguage] = useState('Korean')
   const [languageBlendLevel, setLanguageBlendLevel] = useState(0)
   const [blendingStrategy, setBlendingStrategy] = useState('word-replacement')
+
+  // Language name to code mapping for backend API
+  const getLanguageCode = (languageName: string): string => {
+    const mapping: Record<string, string> = {
+      'Korean': 'ko',
+      'Japanese': 'ja',
+      'Mandarin': 'zh',
+      'Italian': 'it',
+      'Spanish': 'es',
+      'Arabic': 'ar'
+    }
+    return mapping[languageName] || 'ko'
+  }
+
+  // Language name to emoji mapping for UI
+  const getLanguageEmoji = (languageName: string): string => {
+    const mapping: Record<string, string> = {
+      'Korean': '🇰🇷',
+      'Japanese': '🇯🇵',
+      'Mandarin': '🇨🇳',
+      'Italian': '🇮🇹',
+      'Spanish': '🇪🇸',
+      'Arabic': '🇸🇦'
+    }
+    return mapping[languageName] || '🌍'
+  }
   const [languageSupport, setLanguageSupport] = useState({
     phonetics: true,
     romanization: true,
@@ -670,7 +698,8 @@ function App() {
         humorLevel,
         gradeLevel,
         koreanLevel: languageBlendLevel,
-        customVocabulary: customVocabulary || undefined
+        customVocabulary: customVocabulary || undefined,
+        targetLanguage: getLanguageCode(selectedLanguage)
       }
 
       console.log('📋 Story generation params:', params)
@@ -1301,8 +1330,16 @@ function App() {
                 borderTop: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
                 <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '600', color: themeStyle.accent }}>
-                  🇰🇷 Korean Language Learning
+                  {getLanguageEmoji(selectedLanguage)} {selectedLanguage} Language Learning
                 </h3>
+
+                {/* Language Selector */}
+                <div style={{ marginBottom: '20px' }}>
+                  <LanguageSelector
+                    currentLanguage={selectedLanguage}
+                    onChange={setSelectedLanguage}
+                  />
+                </div>
 
                 {/* Language Blend Level */}
                 <div style={{ marginBottom: '20px' }}>
@@ -1327,7 +1364,7 @@ function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>
                     <span>Pure English</span>
                     <span>Mixed</span>
-                    <span>Pure Korean</span>
+                    <span>Pure {selectedLanguage}</span>
                   </div>
                   <div style={{ fontSize: '12px', marginTop: '6px', opacity: 0.8 }}>
                     {getLevelInfo(languageBlendLevel).shortDesc}

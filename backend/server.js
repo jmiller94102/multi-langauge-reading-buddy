@@ -62,8 +62,21 @@ app.post('/api/generate-story', async (req, res) => {
       humorLevel = 'Moderate Fun',
       gradeLevel = '4th Grade',
       koreanLevel = 0,
-      customVocabulary = ''
+      customVocabulary = '',
+      targetLanguage = 'ko' // 'ko', 'ja', 'zh', 'it', 'es', 'ar'
     } = req.body;
+
+    // Language configuration mapping
+    const languageNames = {
+      'ko': 'Korean (한국어)',
+      'ja': 'Japanese (日本語)',
+      'zh': 'Mandarin Chinese (中文)',
+      'it': 'Italian (Italiano)',
+      'es': 'Spanish (Español)',
+      'ar': 'Arabic (العربية)'
+    };
+
+    const targetLanguageName = languageNames[targetLanguage] || 'Korean (한국어)';
 
     if (!passageTheme) {
       return res.status(400).json({
@@ -175,75 +188,75 @@ Please write a complete, original story that meets these requirements.`;
       firstLines: englishContent.split('\n').slice(0, 3)
     });
 
-    // ===== CALL 2: Translate to Korean with Word Mappings =====
-    const koreanPrompt = `You are a Korean translation expert. Your task is to translate an English story and extract vocabulary words.
+    // ===== CALL 2: Translate to Target Language with Word Mappings =====
+    const translationPrompt = `You are a ${targetLanguageName} translation expert. Your task is to translate an English story and extract vocabulary words.
 
 ENGLISH STORY TO TRANSLATE:
 ${englishStory}
 
 INSTRUCTIONS:
-1. Translate the story to Korean, suitable for ${gradeLevel} students
+1. Translate the story to ${targetLanguageName}, suitable for ${gradeLevel} students
 2. PRESERVE all paragraph breaks from the English story
 3. Extract 5 nouns, 5 verbs, and 5 adjectives that actually appear in the story
-4. Map each English word to its Korean translation
+4. Map each English word to its ${targetLanguageName} translation
 
 IMPORTANT: Extract words that are ACTUALLY in the story above, not example words.
 
 Return ONLY this JSON format:
 {
-  "translation": "Your Korean translation here with preserved paragraphs",
+  "translation": "Your ${targetLanguageName} translation here with preserved paragraphs",
   "wordMappings": {
     "nouns": {
-      "actual_noun_from_story": "Korean_translation",
-      "another_real_noun": "Korean_translation",
-      "third_real_noun": "Korean_translation",
-      "fourth_real_noun": "Korean_translation",
-      "fifth_real_noun": "Korean_translation"
+      "actual_noun_from_story": "${targetLanguageName}_translation",
+      "another_real_noun": "${targetLanguageName}_translation",
+      "third_real_noun": "${targetLanguageName}_translation",
+      "fourth_real_noun": "${targetLanguageName}_translation",
+      "fifth_real_noun": "${targetLanguageName}_translation"
     },
     "verbs": {
-      "actual_verb_from_story": "Korean_translation",
-      "another_real_verb": "Korean_translation",
-      "third_real_verb": "Korean_translation",
-      "fourth_real_verb": "Korean_translation",
-      "fifth_real_verb": "Korean_translation"
+      "actual_verb_from_story": "${targetLanguageName}_translation",
+      "another_real_verb": "${targetLanguageName}_translation",
+      "third_real_verb": "${targetLanguageName}_translation",
+      "fourth_real_verb": "${targetLanguageName}_translation",
+      "fifth_real_verb": "${targetLanguageName}_translation"
     },
     "adjectives": {
-      "actual_adjective_from_story": "Korean_translation",
-      "another_real_adjective": "Korean_translation",
-      "third_real_adjective": "Korean_translation",
-      "fourth_real_adjective": "Korean_translation",
-      "fifth_real_adjective": "Korean_translation"
+      "actual_adjective_from_story": "${targetLanguageName}_translation",
+      "another_real_adjective": "${targetLanguageName}_translation",
+      "third_real_adjective": "${targetLanguageName}_translation",
+      "fourth_real_adjective": "${targetLanguageName}_translation",
+      "fifth_real_adjective": "${targetLanguageName}_translation"
     }
   }
 }
 
 START WITH { AND END WITH }`;
 
-    console.log('🤖 [Call 2/2] Translating to Korean...');
+    console.log(`🤖 [Call 2/2] Translating to ${targetLanguageName}...`);
 
-    const koreanResponse = await azureClient.chat.completions.create({
+    const translationResponse = await azureClient.chat.completions.create({
       model: deployment,
       messages: [
         {
           role: 'system',
-          content: 'You are an expert Korean translator specializing in educational content for children. Provide accurate, natural Korean translations that maintain the educational value and emotional impact of the original English text.'
+          content: `You are an expert ${targetLanguageName} translator specializing in educational content for children. Provide accurate, natural ${targetLanguageName} translations that maintain the educational value and emotional impact of the original English text.`
         },
         {
           role: 'user',
-          content: koreanPrompt
+          content: translationPrompt
         }
       ],
-      max_tokens: Math.max(1200, Math.floor(passageLength * 4)), // Korean + JSON structure needs more space
+      max_tokens: Math.max(1200, Math.floor(passageLength * 4)), // Translation + JSON structure needs more space
       temperature: 0.3 // Lower temperature for more accurate translation
     });
 
-    const koreanContent = koreanResponse.choices[0]?.message?.content || '{}';
+    const translatedContent = translationResponse.choices[0]?.message?.content || '{}';
 
-    let koreanStory = '';
+    let translatedStory = '';
     let extractedMappings = {};
 
     // Extract JSON from response if it exists
-    let cleanedContent = koreanContent.trim();
+    let cleanedContent = translatedContent.trim();
     console.log(`🔍 LLM Response preview:`, cleanedContent.substring(0, 300));
 
     // Try to find and extract complete JSON
@@ -255,13 +268,13 @@ START WITH { AND END WITH }`;
 
         const parsed = JSON.parse(jsonString);
 
-        // Extract clean Korean translation
-        koreanStory = parsed.translation || '';
+        // Extract clean translation
+        translatedStory = parsed.translation || '';
 
-        // Ensure Korean story doesn't contain JSON artifacts
-        if (koreanStory.includes('{') || koreanStory.includes('"wordMappings"')) {
-          console.log(`⚠️ Korean story contains JSON artifacts, cleaning...`);
-          koreanStory = extractKoreanText(koreanStory);
+        // Ensure translated story doesn't contain JSON artifacts
+        if (translatedStory.includes('{') || translatedStory.includes('"wordMappings"')) {
+          console.log(`⚠️ ${targetLanguageName} story contains JSON artifacts, cleaning...`);
+          translatedStory = extractKoreanText(translatedStory);
         }
 
         // Combine all word mappings
@@ -272,7 +285,7 @@ START WITH { AND END WITH }`;
             ...(parsed.wordMappings.adjectives || {})
           };
 
-          console.log(`✅ [Call 2/2] Generated Korean translation with ${Object.keys(extractedMappings).length} word mappings`);
+          console.log(`✅ [Call 2/2] Generated ${targetLanguageName} translation with ${Object.keys(extractedMappings).length} word mappings`);
           console.log(`🔍 Word mapping categories:`, {
             nouns: Object.keys(parsed.wordMappings.nouns || {}).length,
             verbs: Object.keys(parsed.wordMappings.verbs || {}).length,
@@ -283,17 +296,17 @@ START WITH { AND END WITH }`;
         }
       } catch (e) {
         console.log(`❌ JSON parsing failed:`, e.message);
-        console.log(`🔍 Raw Korean content:`, koreanContent);
+        console.log(`🔍 Raw ${targetLanguageName} content:`, translatedContent);
 
-        // Fallback: extract Korean text manually
-        koreanStory = extractKoreanText(koreanContent);
-        console.log(`✅ [Call 2/2] Generated Korean translation (manual extraction mode)`);
+        // Fallback: extract translated text manually
+        translatedStory = extractKoreanText(translatedContent);
+        console.log(`✅ [Call 2/2] Generated ${targetLanguageName} translation (manual extraction mode)`);
       }
     } else {
       // No JSON found, treat as plain text
-      koreanStory = koreanContent;
+      translatedStory = translatedContent;
       console.log(`❌ No JSON structure found in response`);
-      console.log(`✅ [Call 2/2] Generated Korean translation (plain text mode)`);
+      console.log(`✅ [Call 2/2] Generated ${targetLanguageName} translation (plain text mode)`);
     }
 
     // ===== Process Sentences for Frontend Blending =====
@@ -336,14 +349,14 @@ START WITH { AND END WITH }`;
     }
     
     const englishSentences = splitSentencesQuoteAware(englishStory);
-    const koreanSentences = splitSentencesQuoteAware(koreanStory);
+    const translatedSentences = splitSentencesQuoteAware(translatedStory);
 
     // Use extracted mappings or fall back to basic extraction
     const nounMappings = Object.keys(extractedMappings).length > 0
       ? extractedMappings
-      : extractBasicNounMappings(englishStory, koreanStory);
+      : extractBasicNounMappings(englishStory, translatedStory);
 
-    console.log(`📊 Processed: ${englishSentences.length} English sentences, ${koreanSentences.length} Korean sentences`);
+    console.log(`📊 Processed: ${englishSentences.length} English sentences, ${translatedSentences.length} ${targetLanguageName} sentences`);
 
     console.log('🔧 Building response object...');
 
@@ -358,11 +371,13 @@ START WITH { AND END WITH }`;
       story: {
         title: englishTitle,
         englishContent: englishStory,
-        koreanContent: koreanStory,
+        koreanContent: translatedStory, // Keep field name for backward compatibility
         englishSentences: englishSentences,
-        koreanSentences: koreanSentences,
+        koreanSentences: translatedSentences, // Keep field name for backward compatibility
         nounMappings: nounMappings,
         customVocabulary: customVocabulary ? customVocabulary.split(',').map(w => w.trim()) : [],
+        targetLanguage: targetLanguage,
+        targetLanguageName: targetLanguageName,
         wordCount: wordCount,
         gradeLevel: gradeLevel,
         koreanLevel: koreanLevel
@@ -373,8 +388,8 @@ START WITH { AND END WITH }`;
           response: englishContent
         },
         llmCall2: {
-          prompt: koreanPrompt,
-          response: koreanContent
+          prompt: translationPrompt,
+          response: translatedContent
         },
         wordMappings: extractedMappings,
         extractedMappings: extractedMappings,
