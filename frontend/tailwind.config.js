@@ -70,6 +70,7 @@ export default {
         wiggle: 'wiggle 1s ease-in-out infinite',
         float: 'float 3s ease-in-out infinite',
         confetti: 'confetti 1s ease-out forwards',
+        shimmer: 'shimmer 2s infinite linear',
       },
       keyframes: {
         wiggle: {
@@ -83,6 +84,10 @@ export default {
         confetti: {
           '0%': { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
           '100%': { transform: 'translateY(-100vh) rotate(720deg)', opacity: 0 },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
     },

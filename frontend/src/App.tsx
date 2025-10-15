@@ -5,6 +5,7 @@ import { Achievements } from './pages/Achievements';
 import { Shop } from './pages/Shop';
 import { Progress } from './pages/Progress';
 import { Profile } from './pages/Profile';
+import { ComponentShowcase } from './pages/ComponentShowcase';
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
         <Route path="/shop" element={<Shop />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/profile" element={<Profile />} />
+
+        {/* Component showcase for testing */}
+        <Route path="/showcase" element={<ComponentShowcase />} />
 
         {/* 404 fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
