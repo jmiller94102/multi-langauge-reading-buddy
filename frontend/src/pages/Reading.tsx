@@ -1,12 +1,272 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { StorySettings } from '@/components/reading/StorySettings';
+import { LanguageSettings } from '@/components/reading/LanguageSettings';
+import { StoryPromptInput } from '@/components/reading/StoryPromptInput';
+import { StoryDisplay } from '@/components/reading/StoryDisplay';
+import { QuizComponent } from '@/components/reading/QuizComponent';
+import { Button } from '@/components/common/Button';
+import { generateStory, generateQuiz } from '@/services/azureOpenAI';
+import type { StorySettings as StorySettingsType, LanguageSettings as LanguageSettingsType, Story } from '@/types/story';
+import type { Quiz, QuizResult } from '@/types/quiz';
+import { defaultStorySettings, defaultLanguageSettings } from '@/types/story';
+import { defaultQuizSettings } from '@/types/quiz';
+
+type ReadingState = 'input' | 'generating' | 'reading' | 'quiz' | 'complete';
 
 export const Reading: React.FC = () => {
+  // State management
+  const [currentState, setCurrentState] = useState<ReadingState>('input');
+  const [storySettings, setStorySettings] = useState<StorySettingsType>(defaultStorySettings);
+  const [languageSettings, setLanguageSettings] = useState<LanguageSettingsType>(defaultLanguageSettings);
+  const [story, setStory] = useState<Story | null>(null);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePromptChange = (prompt: string) => {
+    setStorySettings({ ...storySettings, prompt });
+  };
+
+  const handleGenerate = async () => {
+    setError(null);
+    setCurrentState('generating');
+
+    try {
+      // Generate story
+      const generatedStory = await generateStory(storySettings, languageSettings);
+      setStory(generatedStory);
+
+      // Generate quiz
+      const generatedQuiz = await generateQuiz(generatedStory, defaultQuizSettings);
+      setQuiz(generatedQuiz);
+
+      setCurrentState('reading');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate story');
+      setCurrentState('input');
+    }
+  };
+
+  const handleFinishReading = () => {
+    if (quiz) {
+      setCurrentState('quiz');
+    }
+  };
+
+  const handleQuizComplete = (result: QuizResult) => {
+    setQuizResult(result);
+    setCurrentState('complete');
+  };
+
+  const handleNewStory = () => {
+    setStory(null);
+    setQuiz(null);
+    setQuizResult(null);
+    setError(null);
+    setCurrentState('input');
+  };
+
+  const handleBackToStory = () => {
+    setCurrentState('reading');
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
-      <div className="text-center text-white">
-        <h1 className="text-6xl font-bold mb-4">📚 Reading</h1>
-        <p className="text-2xl">Generate and read stories here</p>
-      </div>
+    <div className="max-w-7xl mx-auto space-y-3">
+      {/* State 1: Story Generation Input */}
+      {currentState === 'input' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Left Panel: Story Settings (40%) */}
+            <div className="lg:col-span-5">
+              <StorySettings settings={storySettings} onChange={setStorySettings} />
+            </div>
+
+            {/* Right Panel: Prompt Input + Language Settings (60%) */}
+            <div className="lg:col-span-7 space-y-3">
+              <StoryPromptInput
+                prompt={storySettings.prompt}
+                storySettings={storySettings}
+                languageSettings={languageSettings}
+                onPromptChange={handlePromptChange}
+                onGenerate={handleGenerate}
+                isGenerating={false}
+              />
+              <LanguageSettings settings={languageSettings} onChange={setLanguageSettings} />
+            </div>
+          </div>
+
+          {error && (
+            <div className="card py-3 px-4 bg-red-50 border-2 border-red-300">
+              <p className="text-child-sm font-bold text-red-700">⚠️ Error</p>
+              <p className="text-child-xs text-red-600">{error}</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* State 2: Generating Story */}
+      {currentState === 'generating' && (
+        <div className="card py-12 px-8 text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="animate-spin text-6xl">⏳</div>
+          </div>
+          <h2 className="text-child-lg font-bold text-gray-900">
+            ✨ Generating Your Story
+          </h2>
+          <p className="text-child-base text-gray-700">
+            Creating a {storySettings.gradeLevel} grade story with {languageSettings.blendLevel * 10}%{' '}
+            {languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'} blending
+          </p>
+          <p className="text-child-sm text-gray-600">
+            This may take 10-15 seconds...
+          </p>
+          <div className="text-7xl animate-bounce-slow">😊</div>
+          <p className="text-child-xs text-gray-500 italic">
+            Your learning buddy is excited!
+          </p>
+        </div>
+      )}
+
+      {/* State 3: Reading Story */}
+      {currentState === 'reading' && story && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+          {/* Story Display (70%) */}
+          <div className="lg:col-span-8">
+            <StoryDisplay story={story} onFinish={handleFinishReading} />
+          </div>
+
+          {/* Right Panel: Pet & Progress (30%) */}
+          <div className="lg:col-span-4 space-y-3">
+            {/* Mini Pet Widget */}
+            <div className="card py-3 px-4 text-center space-y-2">
+              <h3 className="text-child-sm font-bold text-gray-900">🐾 Learning Buddy</h3>
+              <div className="text-6xl animate-bounce-slow">😊</div>
+              <p className="text-child-xs font-bold text-gray-900">Flutterpuff</p>
+              <div className="bg-green-100 border border-green-300 rounded-lg py-2 px-3">
+                <p className="text-[11px] text-green-700 font-semibold">
+                  💬 "Keep reading! You're doing great!"
+                </p>
+              </div>
+            </div>
+
+            {/* Reading Progress */}
+            <div className="card py-3 px-4 space-y-2">
+              <h3 className="text-child-sm font-bold text-gray-900">📊 Reading Progress</h3>
+              <div className="space-y-1 text-child-xs text-gray-700">
+                <p>
+                  {languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'} Words: {story.koreanWordCount}
+                </p>
+                <p>Estimated XP: +50</p>
+                <p>Estimated Coins: +25</p>
+              </div>
+            </div>
+
+            {/* Learning Tips */}
+            <div className="card py-3 px-4 space-y-2">
+              <h3 className="text-child-sm font-bold text-gray-900">💡 Learning Tips</h3>
+              <p className="text-child-xs text-gray-700">
+                Try clicking on {languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Chinese'} words to hear
+                pronunciation!
+              </p>
+              <p className="text-child-xs text-gray-700">
+                Toggle romanization to practice reading{' '}
+                {languageSettings.secondaryLanguage === 'ko' ? 'Hangul' : 'Chinese characters'}.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* State 4: Taking Quiz */}
+      {currentState === 'quiz' && quiz && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+          {/* Quiz Component (70%) */}
+          <div className="lg:col-span-8">
+            <div className="card py-3 px-4 mb-3">
+              <div className="flex items-center justify-between">
+                <h1 className="text-child-lg font-bold text-gray-900">
+                  Quiz: {story?.title}
+                </h1>
+                <Button variant="outline" size="small" onClick={handleBackToStory} aria-label="Back to story">
+                  ← Back to Story
+                </Button>
+              </div>
+            </div>
+            <QuizComponent quiz={quiz} onComplete={handleQuizComplete} />
+          </div>
+
+          {/* Right Panel: Pet & Progress (30%) */}
+          <div className="lg:col-span-4 space-y-3">
+            <div className="card py-3 px-4 text-center space-y-2">
+              <h3 className="text-child-sm font-bold text-gray-900">🐾 Learning Buddy</h3>
+              <div className="text-6xl">😊</div>
+              <p className="text-child-xs font-bold text-gray-900">Flutterpuff</p>
+              <div className="bg-blue-100 border border-blue-300 rounded-lg py-2 px-3">
+                <p className="text-[11px] text-blue-700 font-semibold">💬 "You've got this!"</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* State 5: Quiz Complete */}
+      {currentState === 'complete' && quizResult && (
+        <div className="card py-12 px-8 text-center space-y-6">
+          <div className="text-6xl mb-4">🎉</div>
+          <h1 className="text-child-xl font-black text-gray-900">Great Job!</h1>
+          <div className="space-y-3">
+            <h2 className="text-child-lg font-bold text-gray-900">Quiz Complete!</h2>
+            <p className="text-child-xl font-black text-primary-700">
+              Score: {quizResult.correctAnswers} / {quizResult.totalQuestions} ({quizResult.score}%)
+            </p>
+            <div className="h-4 bg-gray-200 rounded-full overflow-hidden max-w-md mx-auto">
+              <div
+                className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                style={{ width: `${quizResult.score}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg py-4 px-6 max-w-md mx-auto">
+            <p className="text-child-base font-bold text-yellow-900 mb-2">Rewards Earned:</p>
+            <div className="space-y-1 text-child-sm text-yellow-800">
+              <p>• +{quizResult.xpEarned} XP (questions)</p>
+              <p>• +{quizResult.coinsEarned} coins</p>
+              {quizResult.comboBonus > 0 && <p>• Combo bonus: +{quizResult.comboBonus} XP</p>}
+              <div className="border-t-2 border-yellow-400 my-2 pt-2">
+                <p className="font-bold">
+                  Total: +{quizResult.totalXP} XP, +{quizResult.totalCoins} 🪙
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-7xl animate-bounce-slow">😊</div>
+          <p className="text-child-base text-gray-700 italic">Pet happiness increased to 95%!</p>
+
+          <div className="flex gap-3 justify-center pt-4">
+            <Button
+              variant="outline"
+              size="large"
+              onClick={() => setCurrentState('reading')}
+              aria-label="Review story"
+            >
+              Review Story
+            </Button>
+            <Button variant="primary" size="large" onClick={handleNewStory} aria-label="Generate new story">
+              Generate New Story
+            </Button>
+            <Button
+              variant="outline"
+              size="large"
+              onClick={() => (window.location.href = '/dashboard')}
+              aria-label="Back to dashboard"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

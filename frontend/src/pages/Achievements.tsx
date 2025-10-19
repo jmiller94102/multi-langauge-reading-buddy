@@ -2,10 +2,13 @@ import React from 'react';
 
 export const Achievements: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-400 to-red-500">
-      <div className="text-center text-white">
-        <h1 className="text-6xl font-bold mb-4">🏆 Achievements</h1>
-        <p className="text-2xl">Unlock badges and rewards</p>
+    <div className="space-y-6">
+      <h1 className="text-child-2xl font-bold text-gray-900">Achievements</h1>
+      <div className="card">
+        <p className="text-child-base text-gray-600">
+          Unlock badges and rewards! This page will show your achievement progress across reading,
+          quizzes, streaks, and more.
+        </p>
       </div>
     </div>
   );

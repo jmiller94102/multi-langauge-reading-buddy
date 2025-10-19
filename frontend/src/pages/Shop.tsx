@@ -2,10 +2,13 @@ import React from 'react';
 
 export const Shop: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-500">
-      <div className="text-center text-white">
-        <h1 className="text-6xl font-bold mb-4">🛒 Shop</h1>
-        <p className="text-2xl">Buy food and accessories</p>
+    <div className="space-y-6">
+      <h1 className="text-child-2xl font-bold text-gray-900">Shop</h1>
+      <div className="card">
+        <p className="text-child-base text-gray-600">
+          Buy food and accessories! This page will have cultural foods, cosmetics, power-ups, and
+          treasure chests for your pet.
+        </p>
       </div>
     </div>
   );

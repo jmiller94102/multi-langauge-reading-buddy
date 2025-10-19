@@ -3,6 +3,13 @@ export type PetEmotion = 'happy' | 'sad' | 'angry' | 'hungry' | 'excited' | 'bor
 export type PetEvolutionTrack = 'knowledge' | 'coolness' | 'culture';
 export type PetEvolutionStage = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 7 stages
 
+export interface EvolutionHistoryEntry {
+  stage: number;
+  stageName: string;
+  evolvedAt: number; // timestamp
+  userLevel: number;
+}
+
 export interface PetState {
   // Core stats
   happiness: number; // 0-100
@@ -12,6 +19,7 @@ export interface PetState {
   // Evolution
   evolutionTrack: PetEvolutionTrack;
   evolutionStage: PetEvolutionStage;
+  evolutionHistory: EvolutionHistoryEntry[];
 
   // Identity
   name: string;
@@ -23,8 +31,10 @@ export interface PetState {
   lastInteraction: number;
 
   // Items/Accessories
-  accessories: string[]; // Unlocked cosmetics
+  ownedAccessories: string[]; // All unlocked cosmetics
+  equippedAccessories: string[]; // Currently equipped (max 4)
   favoriteFood: string | null; // Cultural food preference
+  foodsTriedHistory: string[]; // Food IDs tried
 }
 
 export interface PetAction {

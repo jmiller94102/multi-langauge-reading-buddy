@@ -27,8 +27,8 @@ A PRP is a detailed implementation guide for a specific feature, containing:
 ### Phase 1: Foundation
 - [x] `phase1-project-setup.md` - React + TypeScript + Vite setup ✅
 - [x] `phase1-component-library.md` - Common components (Button, Card, Modal, etc.) ✅
-- [ ] `theme-system.md` - Theme provider, Tailwind configuration
-- [ ] `navigation.md` - Header, bottom nav, routing
+- [x] `phase1-navigation.md` - Header, bottom nav, side nav, routing, PageLayout ✅
+- [ ] `theme-system.md` - Theme provider (already implemented, needs documentation)
 
 ### Phase 2: Core Pages
 - [ ] `dashboard-page.md` - Dashboard with pet, quests, stats
@@ -62,5 +62,6 @@ A PRP is a detailed implementation guide for a specific feature, containing:
 
 Mark PRPs as completed by checking the box in this README.
 
-**Current PRP**: `phase1-component-library.md` (Generated - Ready for execution)
-**Last Updated**: 2025-10-12
+**Current Phase**: Phase 1 - Foundation (3/4 complete)
+**Next PRP**: Move to Phase 2 (Dashboard Page implementation)
+**Last Updated**: 2025-10-14

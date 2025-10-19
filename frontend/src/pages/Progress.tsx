@@ -2,10 +2,13 @@ import React from 'react';
 
 export const Progress: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-400 to-cyan-500">
-      <div className="text-center text-white">
-        <h1 className="text-6xl font-bold mb-4">📊 Progress</h1>
-        <p className="text-2xl">Track your learning journey</p>
+    <div className="space-y-6">
+      <h1 className="text-child-2xl font-bold text-gray-900">Progress</h1>
+      <div className="card">
+        <p className="text-child-base text-gray-600">
+          Track your learning journey! This page will show charts, stats, and analytics for your
+          reading progress.
+        </p>
       </div>
     </div>
   );
