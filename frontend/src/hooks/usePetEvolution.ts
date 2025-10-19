@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { PetState, PetEvolutionStage, EvolutionHistoryEntry } from '@/types/pet';
 import {
   canEvolveToNextStage,

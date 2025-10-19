@@ -31,6 +31,7 @@ export const Dashboard: React.FC = () => {
     newStage,
     handleAnimationComplete,
     handleModalClose,
+    checkEvolution,
     nextEvolutionInfo,
   } = usePetEvolution({
     pet,
