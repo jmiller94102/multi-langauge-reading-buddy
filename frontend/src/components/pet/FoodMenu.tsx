@@ -19,6 +19,12 @@ export const FoodMenu: React.FC<FoodMenuProps> = ({ coins, petTrack, onFeedFood,
   const chineseFoods = getFoodsByOrigin('chinese');
   const universalFoods = getFoodsByOrigin('universal');
 
+  // Handler to switch origin and reset cultural fact state
+  const handleOriginChange = (origin: 'korean' | 'chinese' | 'universal') => {
+    setSelectedOrigin(origin);
+    setShowCulturalFact(null); // Reset cultural fact when switching tabs
+  };
+
   const currentFoods =
     selectedOrigin === 'korean'
       ? koreanFoods
@@ -78,7 +84,7 @@ export const FoodMenu: React.FC<FoodMenuProps> = ({ coins, petTrack, onFeedFood,
         <div className="border-b-2 border-gray-200 bg-gray-50">
           <div className="flex items-center justify-center gap-2 px-6 py-3">
             <button
-              onClick={() => setSelectedOrigin('korean')}
+              onClick={() => handleOriginChange('korean')}
               className={`px-4 py-2 rounded-lg font-semibold text-child-xs transition-all ${
                 selectedOrigin === 'korean'
                   ? 'bg-red-500 text-white shadow-md scale-105'
@@ -89,7 +95,7 @@ export const FoodMenu: React.FC<FoodMenuProps> = ({ coins, petTrack, onFeedFood,
               🇰🇷 Korean
             </button>
             <button
-              onClick={() => setSelectedOrigin('chinese')}
+              onClick={() => handleOriginChange('chinese')}
               className={`px-4 py-2 rounded-lg font-semibold text-child-xs transition-all ${
                 selectedOrigin === 'chinese'
                   ? 'bg-red-500 text-white shadow-md scale-105'
@@ -100,7 +106,7 @@ export const FoodMenu: React.FC<FoodMenuProps> = ({ coins, petTrack, onFeedFood,
               🇨🇳 Chinese
             </button>
             <button
-              onClick={() => setSelectedOrigin('universal')}
+              onClick={() => handleOriginChange('universal')}
               className={`px-4 py-2 rounded-lg font-semibold text-child-xs transition-all ${
                 selectedOrigin === 'universal'
                   ? 'bg-blue-500 text-white shadow-md scale-105'

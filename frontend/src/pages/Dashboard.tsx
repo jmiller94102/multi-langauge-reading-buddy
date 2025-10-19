@@ -193,6 +193,7 @@ export const Dashboard: React.FC = () => {
             onFeedFood={handleFeedFood}
             onPlay={handlePlay}
             onBoost={handleBoost}
+            onEvolve={checkEvolution}
             nextEvolutionInfo={nextEvolutionInfo}
           />
 

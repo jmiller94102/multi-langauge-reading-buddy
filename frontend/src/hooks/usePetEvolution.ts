@@ -34,20 +34,25 @@ export function usePetEvolution({
   // Get next evolution information
   const nextEvolutionInfo = getNextEvolutionInfo(pet.evolutionTrack, pet.evolutionStage, userLevel);
 
-  // Check if pet can evolve
+  // Check if pet can evolve (manual trigger only)
   const checkEvolution = useCallback(() => {
+    // Check if already evolved at this level
+    const alreadyEvolvedAtLevel = pet.evolutionHistory.some(
+      (entry) => entry.userLevel === userLevel && entry.stage === pet.evolutionStage
+    );
+
+    if (alreadyEvolvedAtLevel) {
+      // Already evolved at this level, don't trigger again
+      return;
+    }
+
     if (canEvolveToNextStage(pet.evolutionStage, userLevel)) {
       // Start evolution sequence
       const nextStage = (pet.evolutionStage + 1) as PetEvolutionStage;
       setNewStage(nextStage);
       setShowAnimation(true);
     }
-  }, [pet.evolutionStage, userLevel]);
-
-  // Auto-check evolution when user levels up
-  useEffect(() => {
-    checkEvolution();
-  }, [userLevel, checkEvolution]);
+  }, [pet.evolutionStage, pet.evolutionHistory, userLevel]);
 
   // Handle animation completion
   const handleAnimationComplete = useCallback(() => {

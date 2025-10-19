@@ -12,6 +12,7 @@ interface VirtualPetWidgetProps {
   onFeedFood: (foodId: string, price: number) => void;
   onPlay: () => void;
   onBoost: () => void;
+  onEvolve?: () => void; // Manual evolution trigger
   nextEvolutionInfo?: {
     canEvolve: boolean;
     nextStage: number | null;
@@ -28,6 +29,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
   onFeedFood,
   onPlay,
   onBoost,
+  onEvolve,
   nextEvolutionInfo,
 }) => {
   const [showFoodMenu, setShowFoodMenu] = useState(false);
@@ -188,6 +190,22 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           </div>
         )}
       </div>
+
+      {/* Evolution Button (if ready to evolve) */}
+      {nextEvolutionInfo?.canEvolve && onEvolve && (
+        <div className="border-t border-gray-200 pt-2">
+          <Button
+            variant="primary"
+            size="medium"
+            onClick={onEvolve}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 animate-pulse"
+            aria-label={`Evolve ${pet.name} to ${nextEvolutionInfo.nextStageName}`}
+          >
+            <span className="text-base mb-0.5" aria-hidden="true">✨</span>
+            <span className="text-[12px] font-bold ml-2">Ready to Evolve!</span>
+          </Button>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="grid grid-cols-3 gap-2 pt-1">
