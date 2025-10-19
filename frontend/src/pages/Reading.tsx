@@ -10,6 +10,8 @@ import type { StorySettings as StorySettingsType, LanguageSettings as LanguageSe
 import type { Quiz, QuizResult } from '@/types/quiz';
 import { defaultStorySettings, defaultLanguageSettings } from '@/types/story';
 import { defaultQuizSettings } from '@/types/quiz';
+import { mockPet } from '@/utils/mockData';
+import { calculateXPMultiplier, calculateCoinBonus } from '@/data/petEvolution';
 
 type ReadingState = 'input' | 'generating' | 'reading' | 'quiz' | 'complete';
 
@@ -22,6 +24,9 @@ export const Reading: React.FC = () => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // TODO: Replace with actual pet state from PetContext in Phase 2+
+  const pet = mockPet;
 
   const handlePromptChange = (prompt: string) => {
     setStorySettings({ ...storySettings, prompt });
@@ -54,8 +59,46 @@ export const Reading: React.FC = () => {
   };
 
   const handleQuizComplete = (result: QuizResult) => {
-    setQuizResult(result);
+    // Apply pet track bonuses
+    const xpMultiplier = calculateXPMultiplier(pet.evolutionTrack, pet.evolutionStage);
+    const coinBonus = calculateCoinBonus(pet.evolutionTrack, pet.evolutionStage);
+
+    // Calculate language XP bonus for Culture track (when blend level is 7-10)
+    const languageXPBonus =
+      pet.evolutionTrack === 'culture' && languageSettings.blendLevel >= 7
+        ? Math.floor((result.xpEarned + result.comboBonus) * (xpMultiplier - 1)) // Culture gets XP bonus too
+        : 0;
+
+    // Calculate final rewards with bonuses
+    const baseXP = result.xpEarned + result.comboBonus;
+    const bonusXP = Math.floor(baseXP * (xpMultiplier - 1)); // Additional XP from multiplier
+    const totalXP = Math.floor(baseXP * xpMultiplier) + languageXPBonus;
+    const totalCoins = result.coinsEarned + coinBonus;
+
+    // Create enhanced result with bonus tracking
+    const enhancedResult: QuizResult = {
+      ...result,
+      totalXP,
+      totalCoins,
+      petTrackBonus: {
+        track: pet.evolutionTrack,
+        stage: pet.evolutionStage,
+        xpMultiplier,
+        bonusXP,
+        coinBonus,
+        languageXPBonus,
+      },
+    };
+
+    setQuizResult(enhancedResult);
     setCurrentState('complete');
+
+    // TODO: Apply rewards to user state in Phase 2+
+    // setUser((prev) => ({
+    //   ...prev,
+    //   xp: prev.xp + totalXP,
+    //   coins: prev.coins + totalCoins,
+    // }));
   };
 
   const handleNewStory = () => {
@@ -156,8 +199,23 @@ export const Reading: React.FC = () => {
                 <p>
                   {languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'} Words: {story.koreanWordCount}
                 </p>
-                <p>Estimated XP: +50</p>
-                <p>Estimated Coins: +25</p>
+                <p>Estimated Base XP: +50</p>
+                {pet.evolutionTrack === 'knowledge' && pet.evolutionStage > 0 && (
+                  <p className="text-purple-600 font-semibold">
+                    🐾 +{Math.round((calculateXPMultiplier(pet.evolutionTrack, pet.evolutionStage) - 1) * 100)}% Knowledge Bonus
+                  </p>
+                )}
+                <p>Estimated Base Coins: +25</p>
+                {pet.evolutionTrack === 'coolness' && pet.evolutionStage > 0 && (
+                  <p className="text-purple-600 font-semibold">
+                    🐾 +{calculateCoinBonus(pet.evolutionTrack, pet.evolutionStage)} Coolness Bonus
+                  </p>
+                )}
+                {pet.evolutionTrack === 'culture' && languageSettings.blendLevel >= 7 && pet.evolutionStage > 0 && (
+                  <p className="text-purple-600 font-semibold">
+                    🐾 +{Math.round((calculateXPMultiplier(pet.evolutionTrack, pet.evolutionStage) - 1) * 100)}% Culture Language Bonus
+                  </p>
+                )}
               </div>
             </div>
 
@@ -233,6 +291,28 @@ export const Reading: React.FC = () => {
               <p>• +{quizResult.xpEarned} XP (questions)</p>
               <p>• +{quizResult.coinsEarned} coins</p>
               {quizResult.comboBonus > 0 && <p>• Combo bonus: +{quizResult.comboBonus} XP</p>}
+
+              {/* Pet Track Bonuses */}
+              {quizResult.petTrackBonus && (
+                <>
+                  {quizResult.petTrackBonus.bonusXP > 0 && (
+                    <p className="text-purple-700 font-semibold">
+                      • 🐾 {quizResult.petTrackBonus.track === 'knowledge' && '📚 Knowledge'}{quizResult.petTrackBonus.track === 'coolness' && '😎 Coolness'}{quizResult.petTrackBonus.track === 'culture' && '🌍 Culture'} Bonus: +{quizResult.petTrackBonus.bonusXP} XP ({Math.round((quizResult.petTrackBonus.xpMultiplier - 1) * 100)}%)
+                    </p>
+                  )}
+                  {quizResult.petTrackBonus.coinBonus > 0 && (
+                    <p className="text-purple-700 font-semibold">
+                      • 🐾 Coolness Bonus: +{quizResult.petTrackBonus.coinBonus} coins
+                    </p>
+                  )}
+                  {quizResult.petTrackBonus.languageXPBonus > 0 && (
+                    <p className="text-purple-700 font-semibold">
+                      • 🐾 Culture Language Bonus: +{quizResult.petTrackBonus.languageXPBonus} XP
+                    </p>
+                  )}
+                </>
+              )}
+
               <div className="border-t-2 border-yellow-400 my-2 pt-2">
                 <p className="font-bold">
                   Total: +{quizResult.totalXP} XP, +{quizResult.totalCoins} 🪙

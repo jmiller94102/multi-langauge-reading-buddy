@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/common/Button';
 import type { PetEvolutionTrack } from '@/types/pet';
-import { FOODS, getFoodsByOrigin, type Food } from '@/data/foods';
+import { getFoodsByOrigin, type Food } from '@/data/foods';
 import { TRACK_FAVORITE_FOODS } from '@/data/petEvolution';
 
 interface FoodMenuProps {

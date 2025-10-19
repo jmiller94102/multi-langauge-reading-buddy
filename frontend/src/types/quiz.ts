@@ -66,12 +66,20 @@ export interface QuizResult {
   xpEarned: number; // Base XP from questions
   coinsEarned: number; // Base coins from questions
   comboBonus: number; // Bonus XP from combo streaks
-  totalXP: number; // xpEarned + comboBonus
-  totalCoins: number;
+  totalXP: number; // xpEarned + comboBonus + pet track bonus
+  totalCoins: number; // coinsEarned + pet coin bonus
   timeSpent: number; // Total seconds
   perfectScore: boolean; // 100% score
   answers: UserAnswer[];
   completedAt: number;
+  petTrackBonus?: {
+    track: 'knowledge' | 'coolness' | 'culture';
+    stage: number;
+    xpMultiplier: number;
+    bonusXP: number;
+    coinBonus: number;
+    languageXPBonus: number;
+  };
 }
 
 export interface HintResponse {
