@@ -88,7 +88,7 @@ app.post('/api/generate-story', async (req, res) => {
 
     // STEP 2: Translate to secondary language (sentence-by-sentence)
     console.log(`[${new Date().toISOString()}] STEP 2: Translating to ${langName}...`);
-    const translationSystemPrompt = `You are an expert translator specializing in children's literature. Translate the following English story to ${langName}, maintaining the same meaning, tone, and sentence structure. Return JSON with sentence-by-sentence translations: {"translatedTitle":"", "translatedContent":"", "sentences":[{"english":"", "${langCode}":"", "vocabulary":[{"word":"", "translation":"", "romanization":""}]}]}`;
+    const translationSystemPrompt = `You are an expert translator specializing in children's literature. Translate the following English story to ${langName}, maintaining the same meaning, tone, and sentence structure. Split the translation into sentences matching the English sentence structure. Return JSON: {"translatedTitle":"", "sentences":["sentence1", "sentence2", ...]}`;
 
     const translationResponse = await client.chat.completions.create({
       model: process.env.AZURE_OPENAI_DEPLOYMENT,
@@ -97,7 +97,7 @@ app.post('/api/generate-story', async (req, res) => {
         { role: 'user', content: `Title: ${englishStory.title}\n\nStory:\n${englishStory.content}` }
       ],
       temperature: 0.3, // Lower temperature for more accurate translation
-      max_tokens: 4000,
+      max_tokens: 8000, // Increased for longer translations
       response_format: { type: 'json_object' }
     });
 
@@ -111,6 +111,8 @@ app.post('/api/generate-story', async (req, res) => {
       translationData = JSON.parse(translationContent);
     } catch (parseError) {
       console.error('[ERROR] JSON parse failed (Translation):', parseError.message);
+      console.error('[ERROR] Response length:', translationContent?.length || 0);
+      console.error('[ERROR] Response preview:', translationContent?.substring(0, 500));
       throw new Error(`Invalid JSON from translation: ${parseError.message}`);
     }
 
@@ -118,18 +120,11 @@ app.post('/api/generate-story', async (req, res) => {
 
     // Split content into sentences for client-side blending
     const englishSentences = splitIntoSentences(englishStory.content);
-    const secondarySentences = translationData.sentences?.map(s => s[langCode]) || splitIntoSentences(translationData.translatedContent || '');
+    const secondarySentences = translationData.sentences || [];
 
-    // Extract all vocabulary words for hints
+    // Build vocabulary map by matching common words between English and translation
+    // For MVP, we'll build this later - for now just use empty map
     const vocabularyMap = {};
-    (translationData.sentences || []).forEach(sentence => {
-      (sentence.vocabulary || []).forEach(vocab => {
-        vocabularyMap[vocab.word.toLowerCase()] = {
-          translation: vocab.translation,
-          romanization: vocab.romanization || ''
-        };
-      });
-    });
 
     // Build story object with BOTH language versions
     const story = {
@@ -139,7 +134,7 @@ app.post('/api/generate-story', async (req, res) => {
 
       // Full content in both languages
       primaryContent: englishStory.content,
-      secondaryContent: translationData.translatedContent || secondarySentences.join(' '),
+      secondaryContent: secondarySentences.join(' '),
 
       // Sentence arrays for blending
       primarySentences: englishSentences,
