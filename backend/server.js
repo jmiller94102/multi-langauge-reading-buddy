@@ -56,11 +56,30 @@ app.post('/api/generate-story', async (req, res) => {
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.8,
-      max_tokens: storySettings.length * 3,
+      max_tokens: 4000, // Increased to ensure full response
       response_format: { type: 'json_object' }
     });
 
-    const storyData = JSON.parse(response.choices[0]?.message?.content || '{}');
+    const content = response.choices[0]?.message?.content;
+    console.log(`[${new Date().toISOString()}] Azure OpenAI response length: ${content?.length || 0} chars`);
+
+    if (!content) {
+      console.error('[ERROR] Empty response from Azure OpenAI:', JSON.stringify(response, null, 2));
+      throw new Error('Azure OpenAI returned empty content');
+    }
+
+    // Log the actual content to debug JSON issues
+    console.log('[DEBUG] Raw Azure OpenAI response:', content.substring(0, 500) + '...');
+    console.log('[DEBUG] Last 200 chars:', content.substring(Math.max(0, content.length - 200)));
+
+    let storyData;
+    try {
+      storyData = JSON.parse(content);
+    } catch (parseError) {
+      console.error('[ERROR] JSON parse failed:', parseError.message);
+      console.error('[ERROR] Problematic JSON:', content);
+      throw new Error(`Invalid JSON from Azure OpenAI: ${parseError.message}`);
+    }
     const story = {
       id: `story_${Date.now()}`,
       ...storyData,

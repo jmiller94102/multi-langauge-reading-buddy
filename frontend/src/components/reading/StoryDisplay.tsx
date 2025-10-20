@@ -5,9 +5,18 @@ import type { Story, BlendedWord } from '@/types/story';
 interface StoryDisplayProps {
   story: Story;
   onFinish: () => void;
+  currentBlendLevel?: number; // Real-time blend level (0-10)
+  showHints?: boolean; // Real-time hint toggle
+  showRomanization?: boolean; // Real-time romanization toggle
 }
 
-export const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, onFinish }) => {
+export const StoryDisplay: React.FC<StoryDisplayProps> = ({
+  story,
+  onFinish,
+  currentBlendLevel = 4,
+  showHints = true,
+  showRomanization = true,
+}) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [wordsRead, setWordsRead] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,6 +61,9 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, onFinish }) =
       return <span>{content}</span>;
     }
 
+    // Calculate which words to show based on blend level (0 = show all, 10 = show none)
+    const wordsToShow = Math.max(0, Math.ceil(blendedWords.length * (1 - currentBlendLevel / 10)));
+
     let lastIndex = 0;
     const parts: React.ReactNode[] = [];
 
@@ -63,18 +75,21 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, onFinish }) =
           parts.push(<span key={`text-${idx}`}>{content.substring(lastIndex, wordIndex)}</span>);
         }
 
+        // Determine if this word should have visible hints based on blend level
+        const shouldShowWordHints = idx < wordsToShow;
+
         // Add the blended word with styling and tooltip
         parts.push(
           <span
             key={`word-${idx}`}
-            className="font-bold text-primary-700 cursor-help hover:text-primary-900 transition-colors relative group"
+            className={`font-bold ${shouldShowWordHints ? 'text-primary-700' : 'text-gray-900'} cursor-help hover:text-primary-900 transition-colors relative group`}
             title={`${word.translation}${word.romanization ? ` (${word.romanization})` : ''}`}
           >
             {word.text}
-            {story.languageSettings.showHints && (
-              <span className="text-gray-600 font-normal"> ({word.translation})</span>
+            {showHints && shouldShowWordHints && (
+              <span className="text-gray-600 font-normal text-[13px]"> ({word.translation})</span>
             )}
-            {story.languageSettings.showRomanization && word.romanization && !story.languageSettings.showHints && (
+            {showRomanization && word.romanization && !showHints && shouldShowWordHints && (
               <span className="text-[11px] text-gray-500 font-normal"> ({word.romanization})</span>
             )}
           </span>
@@ -148,27 +163,12 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, onFinish }) =
               <span className="text-[10px] font-semibold">{playbackSpeed}x</span>
             </Button>
 
-            <div className="flex flex-col items-center justify-center">
-              <label className="flex items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={story.languageSettings.showHints}
-                  onChange={() => {}}
-                  className="w-3 h-3 accent-primary-500"
-                  disabled
-                />
-                <span className="text-[9px]">Hints</span>
-              </label>
-              <label className="flex items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={story.languageSettings.showRomanization}
-                  onChange={() => {}}
-                  className="w-3 h-3 accent-primary-500"
-                  disabled
-                />
-                <span className="text-[9px]">Roman</span>
-              </label>
+            <div className="flex flex-col items-center justify-center bg-primary-50 rounded px-2 py-1">
+              <div className="text-[9px] text-primary-700 font-semibold">Level {currentBlendLevel}</div>
+              <div className="text-[8px] text-gray-600">
+                {showHints && '✓ Hints'}
+                {!showHints && showRomanization && '✓ Roman'}
+              </div>
             </div>
           </div>
         </div>
