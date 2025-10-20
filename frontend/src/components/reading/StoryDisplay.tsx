@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/common/Button';
-import type { Story, BlendedWord } from '@/types/story';
+import type { Story } from '@/types/story';
+import { blendSentences } from '@/utils/languageBlending';
 
 interface StoryDisplayProps {
   story: Story;
@@ -21,6 +22,20 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   const [wordsRead, setWordsRead] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+
+  // Real-time sentence blending based on current blend level
+  const blendedContent = useMemo(() => {
+    if (!story.primarySentences || story.primarySentences.length === 0) {
+      // Fallback to legacy paragraph rendering if sentence arrays not available
+      return null;
+    }
+
+    return blendSentences(
+      story.primarySentences,
+      story.secondarySentences || story.primarySentences,
+      currentBlendLevel
+    );
+  }, [story.primarySentences, story.secondarySentences, currentBlendLevel]);
 
   useEffect(() => {
     const handleScroll = (e: Event) => {
@@ -56,55 +71,52 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
     setPlaybackSpeed(nextSpeed);
   };
 
-  const renderBlendedText = (content: string, blendedWords: BlendedWord[]) => {
-    if (blendedWords.length === 0) {
-      return <span>{content}</span>;
-    }
+  // Render a single sentence with vocabulary hints
+  const renderSentence = (text: string, language: 'primary' | 'secondary', sentenceShowHints: boolean, idx: number) => {
+    // For secondary language sentences, add hints for vocabulary words
+    if (language === 'secondary' && sentenceShowHints && showHints && story.vocabularyMap) {
+      const parts: React.ReactNode[] = [];
+      const words = text.split(/\s+/);
+      let currentText = '';
 
-    // Calculate which words to show based on blend level (0 = show all, 10 = show none)
-    const wordsToShow = Math.max(0, Math.ceil(blendedWords.length * (1 - currentBlendLevel / 10)));
+      words.forEach((word, wordIdx) => {
+        const cleanWord = word.toLowerCase().replace(/[.,!?;:]/g, '');
+        const vocab = story.vocabularyMap?.[cleanWord];
 
-    let lastIndex = 0;
-    const parts: React.ReactNode[] = [];
+        if (vocab && showHints) {
+          // Flush any accumulated text
+          if (currentText) {
+            parts.push(<span key={`text-${idx}-${wordIdx}`}>{currentText} </span>);
+            currentText = '';
+          }
 
-    blendedWords.forEach((word, idx) => {
-      const wordIndex = content.indexOf(word.text, lastIndex);
-      if (wordIndex !== -1) {
-        // Add text before the blended word
-        if (wordIndex > lastIndex) {
-          parts.push(<span key={`text-${idx}`}>{content.substring(lastIndex, wordIndex)}</span>);
+          // Add word with hint
+          parts.push(
+            <span
+              key={`word-${idx}-${wordIdx}`}
+              className="font-semibold text-primary-700 cursor-help hover:text-primary-900"
+              title={vocab.translation + (vocab.romanization ? ` (${vocab.romanization})` : '')}
+            >
+              {word}
+              <span className="text-gray-600 font-normal text-[12px] ml-1">({vocab.translation})</span>
+              {' '}
+            </span>
+          );
+        } else {
+          currentText += (currentText ? ' ' : '') + word;
         }
+      });
 
-        // Determine if this word should have visible hints based on blend level
-        const shouldShowWordHints = idx < wordsToShow;
-
-        // Add the blended word with styling and tooltip
-        parts.push(
-          <span
-            key={`word-${idx}`}
-            className={`font-bold ${shouldShowWordHints ? 'text-primary-700' : 'text-gray-900'} cursor-help hover:text-primary-900 transition-colors relative group`}
-            title={`${word.translation}${word.romanization ? ` (${word.romanization})` : ''}`}
-          >
-            {word.text}
-            {showHints && shouldShowWordHints && (
-              <span className="text-gray-600 font-normal text-[13px]"> ({word.translation})</span>
-            )}
-            {showRomanization && word.romanization && !showHints && shouldShowWordHints && (
-              <span className="text-[11px] text-gray-500 font-normal"> ({word.romanization})</span>
-            )}
-          </span>
-        );
-
-        lastIndex = wordIndex + word.text.length;
+      // Flush remaining text
+      if (currentText) {
+        parts.push(<span key={`text-end-${idx}`}>{currentText}</span>);
       }
-    });
 
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(<span key="text-end">{content.substring(lastIndex)}</span>);
+      return <>{parts}</>;
     }
 
-    return <>{parts}</>;
+    // For primary language or no hints, just return plain text
+    return <span>{text}</span>;
   };
 
   const estimatedTimeRemaining = Math.ceil(((story.wordCount - wordsRead) / 200) * 60); // Assuming 200 WPM
@@ -200,11 +212,32 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
           className="prose max-w-none overflow-y-auto max-h-[500px] pr-2"
           style={{ scrollbarWidth: 'thin' }}
         >
-          {story.paragraphs.map((paragraph) => (
-            <p key={paragraph.id} className="text-child-base leading-relaxed mb-4 text-gray-900">
-              {renderBlendedText(paragraph.content, paragraph.blendedWords)}
-            </p>
-          ))}
+          {blendedContent ? (
+            // NEW: Sentence-based blending (real-time adjustable)
+            <div className="space-y-3">
+              {blendedContent.sentences.map((sentence, idx) => (
+                <p
+                  key={`sentence-${idx}`}
+                  className={`text-child-base leading-relaxed ${
+                    sentence.language === 'secondary'
+                      ? 'text-primary-800 font-medium'
+                      : 'text-gray-900'
+                  }`}
+                >
+                  {renderSentence(sentence.text, sentence.language, sentence.showHints, idx)}
+                </p>
+              ))}
+            </div>
+          ) : (
+            // FALLBACK: Legacy paragraph-based rendering
+            <div className="space-y-4">
+              {story.paragraphs?.map((paragraph) => (
+                <p key={paragraph.id} className="text-child-base leading-relaxed text-gray-900">
+                  {paragraph.content}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Reading Stats */}

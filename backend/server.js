@@ -34,7 +34,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Story generation endpoint
+// Helper function to split text into sentences
+function splitIntoSentences(text) {
+  // Split by sentence-ending punctuation, preserving the punctuation
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}
+
+// Story generation endpoint - 2 sequential LLM calls (English + Translation)
 app.post('/api/generate-story', async (req, res) => {
   try {
     const { storySettings, languageSettings } = req.body;
@@ -43,54 +52,124 @@ app.post('/api/generate-story', async (req, res) => {
     }
 
     const langName = languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin Chinese';
-    const blendPercent = languageSettings.blendLevel * 10;
+    const langCode = languageSettings.secondaryLanguage;
 
-    const systemPrompt = `You are an expert children's story writer. Write exactly ${storySettings.length} words (±10%) for ${storySettings.gradeLevel} grade. Blend ${blendPercent}% ${langName} words naturally. Return JSON: {"title":"", "content":"", "paragraphs":[{"id":"p1", "content":"", "blendedWords":[{"text":"", "translation":"", "romanization":"", "language":"${languageSettings.secondaryLanguage}"}]}], "wordCount":0}`;
+    // STEP 1: Generate English story
+    console.log(`[${new Date().toISOString()}] STEP 1: Generating English story...`);
+    const englishSystemPrompt = `You are an expert children's story writer. Write exactly ${storySettings.length} words (±10%) for ${storySettings.gradeLevel} grade level in ENGLISH ONLY. Make the story engaging, educational, and age-appropriate. Return JSON: {"title":"", "content":"", "wordCount":0}`;
 
     const userPrompt = `Story prompt: ${storySettings.prompt}`;
 
-    const response = await client.chat.completions.create({
+    const englishResponse = await client.chat.completions.create({
       model: process.env.AZURE_OPENAI_DEPLOYMENT,
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: englishSystemPrompt },
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.8,
-      max_tokens: 4000, // Increased to ensure full response
+      max_tokens: 4000,
       response_format: { type: 'json_object' }
     });
 
-    const content = response.choices[0]?.message?.content;
-    console.log(`[${new Date().toISOString()}] Azure OpenAI response length: ${content?.length || 0} chars`);
-
-    if (!content) {
-      console.error('[ERROR] Empty response from Azure OpenAI:', JSON.stringify(response, null, 2));
-      throw new Error('Azure OpenAI returned empty content');
+    const englishContent = englishResponse.choices[0]?.message?.content;
+    if (!englishContent) {
+      throw new Error('Empty response from Azure OpenAI (English story)');
     }
 
-    // Log the actual content to debug JSON issues
-    console.log('[DEBUG] Raw Azure OpenAI response:', content.substring(0, 500) + '...');
-    console.log('[DEBUG] Last 200 chars:', content.substring(Math.max(0, content.length - 200)));
-
-    let storyData;
+    let englishStory;
     try {
-      storyData = JSON.parse(content);
+      englishStory = JSON.parse(englishContent);
     } catch (parseError) {
-      console.error('[ERROR] JSON parse failed:', parseError.message);
-      console.error('[ERROR] Problematic JSON:', content);
+      console.error('[ERROR] JSON parse failed (English):', parseError.message);
       throw new Error(`Invalid JSON from Azure OpenAI: ${parseError.message}`);
     }
+
+    console.log(`[${new Date().toISOString()}] English story generated: "${englishStory.title}" (${englishStory.wordCount} words)`);
+
+    // STEP 2: Translate to secondary language (sentence-by-sentence)
+    console.log(`[${new Date().toISOString()}] STEP 2: Translating to ${langName}...`);
+    const translationSystemPrompt = `You are an expert translator specializing in children's literature. Translate the following English story to ${langName}, maintaining the same meaning, tone, and sentence structure. Return JSON with sentence-by-sentence translations: {"translatedTitle":"", "translatedContent":"", "sentences":[{"english":"", "${langCode}":"", "vocabulary":[{"word":"", "translation":"", "romanization":""}]}]}`;
+
+    const translationResponse = await client.chat.completions.create({
+      model: process.env.AZURE_OPENAI_DEPLOYMENT,
+      messages: [
+        { role: 'system', content: translationSystemPrompt },
+        { role: 'user', content: `Title: ${englishStory.title}\n\nStory:\n${englishStory.content}` }
+      ],
+      temperature: 0.3, // Lower temperature for more accurate translation
+      max_tokens: 4000,
+      response_format: { type: 'json_object' }
+    });
+
+    const translationContent = translationResponse.choices[0]?.message?.content;
+    if (!translationContent) {
+      throw new Error('Empty response from Azure OpenAI (Translation)');
+    }
+
+    let translationData;
+    try {
+      translationData = JSON.parse(translationContent);
+    } catch (parseError) {
+      console.error('[ERROR] JSON parse failed (Translation):', parseError.message);
+      throw new Error(`Invalid JSON from translation: ${parseError.message}`);
+    }
+
+    console.log(`[${new Date().toISOString()}] Translation completed: ${translationData.sentences?.length || 0} sentences`);
+
+    // Split content into sentences for client-side blending
+    const englishSentences = splitIntoSentences(englishStory.content);
+    const secondarySentences = translationData.sentences?.map(s => s[langCode]) || splitIntoSentences(translationData.translatedContent || '');
+
+    // Extract all vocabulary words for hints
+    const vocabularyMap = {};
+    (translationData.sentences || []).forEach(sentence => {
+      (sentence.vocabulary || []).forEach(vocab => {
+        vocabularyMap[vocab.word.toLowerCase()] = {
+          translation: vocab.translation,
+          romanization: vocab.romanization || ''
+        };
+      });
+    });
+
+    // Build story object with BOTH language versions
     const story = {
       id: `story_${Date.now()}`,
-      ...storyData,
+      title: englishStory.title,
+      translatedTitle: translationData.translatedTitle || englishStory.title,
+
+      // Full content in both languages
+      primaryContent: englishStory.content,
+      secondaryContent: translationData.translatedContent || secondarySentences.join(' '),
+
+      // Sentence arrays for blending
+      primarySentences: englishSentences,
+      secondarySentences: secondarySentences,
+
+      // Vocabulary mapping for hints
+      vocabularyMap: vocabularyMap,
+
+      // Legacy fields for compatibility
+      content: englishStory.content,
+      paragraphs: [{
+        id: 'p1',
+        content: englishStory.content,
+        blendedWords: Object.entries(vocabularyMap).map(([word, data]) => ({
+          text: word,
+          translation: data.translation,
+          romanization: data.romanization,
+          language: langCode
+        }))
+      }],
+
       settings: storySettings,
       languageSettings,
+      wordCount: englishStory.wordCount || englishSentences.join(' ').split(/\s+/).length,
       estimatedReadTime: Math.ceil(storySettings.length / 200),
-      koreanWordCount: storyData.paragraphs?.reduce((c, p) => c + (p.blendedWords?.length || 0), 0) || 0,
+      koreanWordCount: Object.keys(vocabularyMap).length,
       createdAt: Date.now()
     };
 
-    console.log(`[${new Date().toISOString()}] Story generated: ${story.title}`);
+    console.log(`[${new Date().toISOString()}] Complete story package created: ${story.primarySentences.length} English sentences, ${story.secondarySentences.length} ${langName} sentences`);
     res.json({ success: true, data: story, timestamp: Date.now() });
   } catch (error) {
     console.error('[ERROR] Story generation failed:', error);

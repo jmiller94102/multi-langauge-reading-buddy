@@ -12,30 +12,8 @@ export const LanguageSettings: React.FC<LanguageSettingsProps> = ({ settings, on
     onChange({ ...settings, secondaryLanguage });
   };
 
-  const handleBlendLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...settings, blendLevel: parseInt(e.target.value, 10) });
-  };
-
   const handleToggle = (key: keyof LanguageSettingsType, value: boolean) => {
     onChange({ ...settings, [key]: value });
-  };
-
-  const getExampleText = () => {
-    if (settings.blendLevel === 0) {
-      return '"The brave astronaut flew through space."';
-    } else if (settings.blendLevel <= 3) {
-      return settings.secondaryLanguage === 'ko'
-        ? '"The brave 우주비행사 (astronaut) flew through space."'
-        : '"The brave 宇航员 (astronaut) flew through space."';
-    } else if (settings.blendLevel <= 7) {
-      return settings.secondaryLanguage === 'ko'
-        ? '"The brave 우주비행사 (astronaut) flew through 우주 (space)."'
-        : '"The brave 宇航员 (astronaut) flew through 太空 (space)."';
-    } else {
-      return settings.secondaryLanguage === 'ko'
-        ? '"용감한 (brave) 우주비행사 (astronaut) flew through 우주 (space)."'
-        : '"勇敢的 (brave) 宇航员 (astronaut) flew through 太空 (space)."';
-    }
   };
 
   if (collapsed) {
@@ -83,40 +61,10 @@ export const LanguageSettings: React.FC<LanguageSettingsProps> = ({ settings, on
         </div>
       </div>
 
-      {/* Blend Level Slider */}
-      <div>
-        <label htmlFor="blend-level" className="block text-child-xs font-semibold text-gray-700 mb-0.5">
-          Blend Level: [{settings.blendLevel}]
-        </label>
-        <input
-          id="blend-level"
-          type="range"
-          min="0"
-          max="10"
-          step="1"
-          value={settings.blendLevel}
-          onChange={handleBlendLevelChange}
-          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-500"
-          aria-label="Language blend level slider"
-          aria-valuemin={0}
-          aria-valuemax={10}
-          aria-valuenow={settings.blendLevel}
-        />
-        <div className="flex justify-between text-[10px] text-gray-600 mt-0.5">
-          <span>0%<br/>English</span>
-          <span>50%<br/>Mix</span>
-          <span>100%<br/>{settings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'}</span>
-        </div>
-        <p className="text-[11px] text-gray-700 mt-0.5">
-          Current: {settings.blendLevel * 10}% {settings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'} blending
-        </p>
-      </div>
-
-      {/* Example Preview */}
-      <div className="bg-gray-100 rounded-lg p-1.5 border border-gray-300">
-        <p className="text-[9px] font-semibold text-gray-700 mb-0.5">Example:</p>
-        <p className="text-[11px] text-gray-900 italic">
-          {getExampleText()}
+      {/* Info: Blend level now controlled by real-time slider while reading */}
+      <div className="bg-primary-50 rounded-lg p-2 border border-primary-200">
+        <p className="text-[11px] text-primary-800">
+          💡 <strong>Tip:</strong> Use the blend level slider while reading to adjust difficulty in real-time!
         </p>
       </div>
 

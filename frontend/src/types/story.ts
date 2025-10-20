@@ -39,8 +39,17 @@ export interface StoryParagraph {
 export interface Story {
   id: string;
   title: string;
-  content: string; // Full story text
-  paragraphs: StoryParagraph[]; // Broken into paragraphs for rendering
+  translatedTitle?: string; // Title in secondary language
+  content: string; // Full story text (legacy, for compatibility)
+  paragraphs: StoryParagraph[]; // Broken into paragraphs for rendering (legacy)
+
+  // NEW: Dual-language content for client-side blending
+  primaryContent: string; // Full English story
+  secondaryContent?: string; // Full Korean/Mandarin story
+  primarySentences: string[]; // English sentences for blending
+  secondarySentences?: string[]; // Korean/Mandarin sentences for blending
+  vocabularyMap?: Record<string, { translation: string; romanization: string }>; // Word hints
+
   settings: StorySettings;
   languageSettings: LanguageSettings;
   wordCount: number;
