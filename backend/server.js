@@ -86,9 +86,9 @@ app.post('/api/generate-story', async (req, res) => {
 
     console.log(`[${new Date().toISOString()}] English story generated: "${englishStory.title}" (${englishStory.wordCount} words)`);
 
-    // STEP 2: Translate to secondary language (sentence-by-sentence)
+    // STEP 2: Translate to secondary language (full text)
     console.log(`[${new Date().toISOString()}] STEP 2: Translating to ${langName}...`);
-    const translationSystemPrompt = `You are an expert translator specializing in children's literature. Translate the following English story to ${langName}, maintaining the same meaning, tone, and sentence structure. Split the translation into sentences matching the English sentence structure. Return JSON: {"translatedTitle":"", "sentences":["sentence1", "sentence2", ...]}`;
+    const translationSystemPrompt = `You are an expert translator specializing in children's literature. Translate the following English story to ${langName}, maintaining the same meaning, tone, and sentence structure. Return JSON: {"translatedTitle":"", "translatedContent":""}`;
 
     const translationResponse = await client.chat.completions.create({
       model: process.env.AZURE_OPENAI_DEPLOYMENT,
@@ -116,11 +116,11 @@ app.post('/api/generate-story', async (req, res) => {
       throw new Error(`Invalid JSON from translation: ${parseError.message}`);
     }
 
-    console.log(`[${new Date().toISOString()}] Translation completed: ${translationData.sentences?.length || 0} sentences`);
+    console.log(`[${new Date().toISOString()}] Translation completed: ${translationData.translatedContent?.length || 0} characters`);
 
     // Split content into sentences for client-side blending
     const englishSentences = splitIntoSentences(englishStory.content);
-    const secondarySentences = translationData.sentences || [];
+    const secondarySentences = splitIntoSentences(translationData.translatedContent || '');
 
     // Build vocabulary map by matching common words between English and translation
     // For MVP, we'll build this later - for now just use empty map

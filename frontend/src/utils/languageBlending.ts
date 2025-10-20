@@ -21,14 +21,14 @@ export interface BlendResult {
  */
 const BLEND_DESCRIPTIONS: Record<number, string> = {
   0: '100% English - Perfect for beginners',
-  1: 'Mostly English with a few hints',
-  2: 'English dominant - Some secondary words',
-  3: 'Mostly English',
-  4: 'English with frequent secondary language',
-  5: 'Balanced - Equal mix',
-  6: 'Secondary language with English support',
-  7: 'Mostly secondary language',
-  8: 'Secondary dominant - Some English',
+  1: 'Key nouns in secondary language',
+  2: 'Nouns + verbs in secondary language',
+  3: 'Nouns + verbs + adjectives mixed',
+  4: 'Heavy word mixing (nouns/verbs/adj/adv)',
+  5: '2 English + 1 secondary sentence pattern',
+  6: 'More secondary sentences',
+  7: 'Alternating sentences',
+  8: 'Mostly secondary sentences',
   9: 'Almost all secondary language',
   10: '100% Secondary - Full immersion!',
 };
@@ -97,14 +97,16 @@ export function blendSentences(
 
   // Determine pattern based on level
   if (level >= 1 && level <= 4) {
-    // English dominant - alternate with increasing secondary frequency
-    const secondaryFrequency = Math.ceil(1 / secondaryRatio); // How often to insert secondary sentence
+    // FUTURE: Word-level blending (nouns → verbs → adjectives → adverbs)
+    // For now: Gradually introduce secondary sentences
+    // Level 1: Every 5th sentence, Level 2: Every 4th, Level 3: Every 3rd, Level 4: Every 2nd
+    const secondaryFrequency = 6 - level; // 5, 4, 3, 2
     for (let i = 0; i < totalSentences; i++) {
       const primarySentence = primarySentences[i];
-      if (!primarySentence) continue; // Skip if undefined
+      if (!primarySentence) continue;
 
       const secondarySentence = secondarySentences?.[i];
-      const useSecondary = secondaryRatio > 0 && i % secondaryFrequency === 0 && !!secondarySentence;
+      const useSecondary = i > 0 && i % secondaryFrequency === 0 && !!secondarySentence;
       sentences.push({
         text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
         language: useSecondary ? 'secondary' : 'primary',
@@ -112,28 +114,70 @@ export function blendSentences(
       });
     }
   } else if (level === 5) {
-    // Balanced 50/50 - alternate every sentence
+    // 2 English + 1 secondary pattern
     for (let i = 0; i < totalSentences; i++) {
       const primarySentence = primarySentences[i];
-      if (!primarySentence) continue; // Skip if undefined
+      if (!primarySentence) continue;
+
+      const secondarySentence = secondarySentences?.[i];
+      const useSecondary = i % 3 === 2 && !!secondarySentence; // Every 3rd sentence is secondary
+      sentences.push({
+        text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
+        language: useSecondary ? 'secondary' : 'primary',
+        showHints: useSecondary,
+      });
+    }
+  } else if (level === 6) {
+    // 1 English + 1 secondary (more secondary sentences)
+    for (let i = 0; i < totalSentences; i++) {
+      const primarySentence = primarySentences[i];
+      if (!primarySentence) continue;
 
       const secondarySentence = secondarySentences?.[i];
       const useSecondary = i % 2 === 1 && !!secondarySentence;
       sentences.push({
         text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
         language: useSecondary ? 'secondary' : 'primary',
-        showHints: true,
+        showHints: useSecondary,
       });
     }
-  } else if (level >= 6 && level <= 9) {
-    // Secondary dominant - alternate with increasing primary sparsity
-    const primaryFrequency = Math.ceil(1 / primaryRatio); // How often to insert primary sentence
+  } else if (level === 7) {
+    // Alternating sentences (same as level 6 but more hints)
     for (let i = 0; i < totalSentences; i++) {
       const primarySentence = primarySentences[i];
-      if (!primarySentence) continue; // Skip if undefined
+      if (!primarySentence) continue;
 
-      const usePrimary = primaryRatio > 0 && i % primaryFrequency === 0;
       const secondarySentence = secondarySentences?.[i];
+      const useSecondary = i % 2 === 0 && !!secondarySentence; // Start with secondary
+      sentences.push({
+        text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
+        language: useSecondary ? 'secondary' : 'primary',
+        showHints: true, // Show hints at this level
+      });
+    }
+  } else if (level === 8) {
+    // 1 English + 2 secondary pattern
+    for (let i = 0; i < totalSentences; i++) {
+      const primarySentence = primarySentences[i];
+      if (!primarySentence) continue;
+
+      const secondarySentence = secondarySentences?.[i];
+      const usePrimary = i % 3 === 0; // Every 3rd sentence is primary
+      const text = usePrimary ? primarySentence : (secondarySentence || primarySentence);
+      sentences.push({
+        text,
+        language: usePrimary ? 'primary' : 'secondary',
+        showHints: !usePrimary,
+      });
+    }
+  } else if (level === 9) {
+    // Mostly secondary (1 primary per 4 sentences)
+    for (let i = 0; i < totalSentences; i++) {
+      const primarySentence = primarySentences[i];
+      if (!primarySentence) continue;
+
+      const secondarySentence = secondarySentences?.[i];
+      const usePrimary = i % 4 === 0; // Every 4th sentence is primary
       const text = usePrimary ? primarySentence : (secondarySentence || primarySentence);
       sentences.push({
         text,
