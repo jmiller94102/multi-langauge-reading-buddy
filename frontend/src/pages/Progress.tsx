@@ -1,15 +1,316 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { PetCharacter } from '@/components/pet/PetCharacter';
+import { EVOLUTION_STAGE_NAMES } from '@/data/petEvolution';
+import { mockUser, mockPet } from '@/utils/mockData';
+import { getUnlockedAchievements } from '@/data/achievements';
 
 export const Progress: React.FC = () => {
+  const navigate = useNavigate();
+  const user = mockUser;
+  const pet = mockPet;
+  const recentAchievements = getUnlockedAchievements().slice(0, 3);
+
+  // Mock weekly stats
+  const weeklyStats = {
+    xpGained: 450,
+    xpChange: 22,
+    passagesRead: 12,
+    passagesChange: 3,
+    quizzesCompleted: 10,
+    quizzesChange: 2,
+    gemsEarned: 5,
+    achievementsUnlocked: 2,
+  };
+
+  // Mock language progress
+  const koreanProgress = {
+    wordsLearned: 145,
+    totalWords: 500,
+    passages5Plus: 8,
+    totalPassages5Plus: 20,
+    avgBlendLevel: 4.2,
+    maxBlendLevel: 10,
+  };
+
+  const mandarinProgress = {
+    wordsLearned: 23,
+    totalWords: 500,
+    passages5Plus: 0,
+    totalPassages5Plus: 20,
+  };
+
+  // Mock quiz performance
+  const quizPerformance = {
+    overallAccuracy: 87,
+    thisWeekAccuracy: 90,
+    weekChange: 5,
+    bestSubject: 'Comprehension',
+    bestAccuracy: 95,
+    needsWork: 'Vocabulary',
+    needsWorkAccuracy: 78,
+    perfectQuizzes: 3,
+    totalQuizzes: 10,
+  };
+
+  // Calculate percentages
+  const koreanWordsPercent = Math.round((koreanProgress.wordsLearned / koreanProgress.totalWords) * 100);
+  const koreanPassagesPercent = Math.round((koreanProgress.passages5Plus / koreanProgress.totalPassages5Plus) * 100);
+  const koreanBlendPercent = Math.round((koreanProgress.avgBlendLevel / koreanProgress.maxBlendLevel) * 100);
+  const mandarinWordsPercent = Math.round((mandarinProgress.wordsLearned / mandarinProgress.totalWords) * 100);
+  const perfectQuizPercent = Math.round((quizPerformance.perfectQuizzes / quizPerformance.totalQuizzes) * 100);
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-child-2xl font-bold text-gray-900">Progress</h1>
-      <div className="card">
-        <p className="text-child-base text-gray-600">
-          Track your learning journey! This page will show charts, stats, and analytics for your
-          reading progress.
-        </p>
+    <PageLayout>
+      <div className="space-y-4 max-w-7xl mx-auto">
+        {/* Page Header */}
+        <div className="card space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-3xl" aria-hidden="true">📊</span>
+            <div>
+              <h1 className="text-child-xl font-bold text-gray-900">Your Learning Progress</h1>
+              <p className="text-child-xs text-gray-600">Track your journey to becoming a multilingual master!</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Left Column - Stats */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Overview Stats */}
+            <div className="card">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-3">📈 This Week's Overview</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <StatCard icon="📚" label="XP Earned" value={weeklyStats.xpGained} change={weeklyStats.xpChange} />
+                <StatCard icon="📖" label="Passages" value={weeklyStats.passagesRead} change={weeklyStats.passagesChange} />
+                <StatCard icon="✅" label="Quizzes" value={weeklyStats.quizzesCompleted} change={weeklyStats.quizzesChange} />
+                <StatCard icon="🎯" label="Streak" value={user.streak} suffix=" days" />
+                <StatCard icon="💎" label="Gems" value={weeklyStats.gemsEarned} prefix="+" />
+                <StatCard icon="🏆" label="Achievements" value={weeklyStats.achievementsUnlocked} prefix="+" />
+              </div>
+            </div>
+
+            {/* Language Progress */}
+            <div className="card">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-3">🌍 Language Learning Progress</h2>
+
+              {/* Korean */}
+              <div className="mb-4">
+                <h3 className="text-child-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <span>🇰🇷</span>Korean
+                </h3>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                      <span>Words Learned:</span>
+                      <span className="font-semibold">{koreanProgress.wordsLearned} / {koreanProgress.totalWords}</span>
+                    </div>
+                    <ProgressBar percent={koreanWordsPercent} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                      <span>Level 5+ Passages:</span>
+                      <span className="font-semibold">{koreanProgress.passages5Plus} / {koreanProgress.totalPassages5Plus}</span>
+                    </div>
+                    <ProgressBar percent={koreanPassagesPercent} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                      <span>Avg Blend Level:</span>
+                      <span className="font-semibold">{koreanProgress.avgBlendLevel} / {koreanProgress.maxBlendLevel}</span>
+                    </div>
+                    <ProgressBar percent={koreanBlendPercent} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mandarin */}
+              <div>
+                <h3 className="text-child-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <span>🇨🇳</span>Mandarin
+                </h3>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                      <span>Words Learned:</span>
+                      <span className="font-semibold">{mandarinProgress.wordsLearned} / {mandarinProgress.totalWords}</span>
+                    </div>
+                    <ProgressBar percent={mandarinWordsPercent} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                      <span>Level 5+ Passages:</span>
+                      <span className="font-semibold">{mandarinProgress.passages5Plus} / {mandarinProgress.totalPassages5Plus}</span>
+                    </div>
+                    <ProgressBar percent={0} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quiz Performance */}
+            <div className="card">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-3">🎓 Quiz Performance</h2>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-child-sm font-semibold text-gray-900">Overall Accuracy</span>
+                    <span className="text-child-sm font-bold text-primary-600">{quizPerformance.overallAccuracy}%</span>
+                  </div>
+                  <ProgressBar percent={quizPerformance.overallAccuracy} color="blue" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
+                  <div>
+                    <p className="text-child-xs text-gray-600">This Week</p>
+                    <p className="text-child-sm font-bold text-success-600">
+                      {quizPerformance.thisWeekAccuracy}% <span className="text-child-xs">↑ {quizPerformance.weekChange}%</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-child-xs text-gray-600">Trend</p>
+                    <p className="text-child-sm font-bold text-success-600">↑ Improving</p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-child-xs text-gray-700">Best: {quizPerformance.bestSubject}</span>
+                    <span className="text-child-xs font-semibold text-success-600">{quizPerformance.bestAccuracy}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-child-xs text-gray-700">Needs Work: {quizPerformance.needsWork}</span>
+                    <span className="text-child-xs font-semibold text-amber-600">{quizPerformance.needsWorkAccuracy}%</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                    <span>Perfect Quizzes:</span>
+                    <span className="font-semibold">{quizPerformance.perfectQuizzes} / {quizPerformance.totalQuizzes}</span>
+                  </div>
+                  <ProgressBar percent={perfectQuizPercent} color="amber" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Pet & Achievements */}
+          <div className="lg:col-span-5 space-y-4">
+            {/* Pet Evolution */}
+            <div className="card">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-3">🐾 Pet Evolution</h2>
+              <div className="space-y-3">
+                <div className="text-center py-4 bg-gradient-to-br from-primary-50 to-accent-50 rounded-lg">
+                  <div className="flex justify-center mb-2">
+                    <PetCharacter emotion={pet.emotion} size="large" animate={true} />
+                  </div>
+                  <p className="text-child-sm font-bold text-gray-900">{pet.name}</p>
+                  <p className="text-child-xs text-gray-600">Level {user.level} • {pet.evolutionTrack} Track</p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-child-xs text-gray-700 mb-1">
+                    <span>Current Stage:</span>
+                    <span className="font-semibold">Stage {pet.evolutionStage} ({EVOLUTION_STAGE_NAMES[pet.evolutionTrack][pet.evolutionStage]})</span>
+                  </div>
+                  <div className="flex justify-between text-child-xs text-gray-700">
+                    <span>Next Evolution:</span>
+                    <span className="font-semibold">Level 15</span>
+                  </div>
+                  <div className="mt-2">
+                    <ProgressBar percent={Math.round((user.level / 15) * 100)} color="purple" />
+                    <p className="text-child-xs text-center text-gray-600 mt-1">
+                      {15 - user.level} levels to go!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Learning Goals */}
+            <div className="card">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-3">🎯 Learning Goals</h2>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-child-xs font-semibold text-gray-700 mb-1">Weekly: Complete 15 passages</p>
+                  <ProgressBar percent={80} />
+                  <p className="text-child-xs text-gray-600 mt-1">12 / 15 (80%)</p>
+                </div>
+                <div>
+                  <p className="text-child-xs font-semibold text-gray-700 mb-1">Monthly: Reach Level 15</p>
+                  <ProgressBar percent={Math.round((user.level / 15) * 100)} />
+                  <p className="text-child-xs text-gray-600 mt-1">{user.level} / 15 ({Math.round((user.level / 15) * 100)}%)</p>
+                </div>
+                <div>
+                  <p className="text-child-xs font-semibold text-gray-700 mb-1">Long-term: Master 500 Korean words</p>
+                  <ProgressBar percent={koreanWordsPercent} />
+                  <p className="text-child-xs text-gray-600 mt-1">{koreanProgress.wordsLearned} / 500 ({koreanWordsPercent}%)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Achievements */}
+            <div className="card">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-3">🏅 Recent Achievements</h2>
+              <div className="space-y-2">
+                {recentAchievements.map((achievement) => (
+                  <div key={achievement.id} className="flex items-center gap-3 p-2 bg-primary-50 rounded-lg">
+                    <span className="text-3xl">{achievement.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-child-xs font-bold text-gray-900">{achievement.title}</p>
+                      <p className="text-[10px] text-gray-600">+{achievement.xp} XP{achievement.gems > 0 && `, +${achievement.gems} 💎`}</p>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => navigate('/achievements')}
+                  className="w-full py-2 text-child-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+                >
+                  View All Achievements →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </PageLayout>
+  );
+};
+
+// Stat Card Component
+const StatCard: React.FC<{ icon: string; label: string; value: number; change?: number; prefix?: string; suffix?: string }> = ({ icon, label, value, change, prefix = '', suffix = '' }) => (
+  <div className="bg-gradient-to-br from-gray-50 to-white p-3 rounded-lg border border-gray-200">
+    <div className="flex items-center gap-2 mb-1">
+      <span className="text-xl" aria-hidden="true">{icon}</span>
+      <span className="text-child-xs text-gray-600">{label}</span>
+    </div>
+    <p className="text-child-base font-bold text-gray-900">
+      {prefix}{value}{suffix}
+    </p>
+    {change !== undefined && (
+      <p className="text-[10px] text-success-600">↑ {change > 0 ? '+' : ''}{change}{typeof change === 'number' && change < 50 ? '%' : ''}</p>
+    )}
+  </div>
+);
+
+// Progress Bar Component
+const ProgressBar: React.FC<{ percent: number; color?: 'blue' | 'amber' | 'purple' | 'green' }> = ({ percent, color = 'blue' }) => {
+  const colorClasses = {
+    blue: 'bg-gradient-to-r from-primary-400 to-primary-600',
+    amber: 'bg-gradient-to-r from-amber-400 to-amber-600',
+    purple: 'bg-gradient-to-r from-purple-400 to-purple-600',
+    green: 'bg-gradient-to-r from-success-400 to-success-600',
+  };
+
+  return (
+    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+      <div
+        className={`h-full ${colorClasses[color]} transition-all duration-500`}
+        style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+      />
     </div>
   );
 };

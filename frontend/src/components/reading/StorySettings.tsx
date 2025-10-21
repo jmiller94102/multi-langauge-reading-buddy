@@ -39,16 +39,16 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1.5">
       {/* Story Settings Card */}
-      <div className="card py-3 px-4 space-y-3">
-        <h3 className="text-child-base font-bold text-gray-900 border-b-2 border-gray-200 pb-2">
+      <div className="card py-1.5 px-2 space-y-1.5">
+        <h3 className="text-child-xs font-bold text-gray-900 border-b border-gray-200 pb-1">
           📝 Story Settings
         </h3>
 
         {/* Length Slider */}
         <div>
-          <label htmlFor="story-length" className="block text-child-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="story-length" className="block text-[11px] font-semibold text-gray-700 mb-1">
             Story Length: {settings.length} words
           </label>
           <input
@@ -74,15 +74,15 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
 
         {/* Grade Level */}
         <div>
-          <label className="block text-child-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-[11px] font-semibold text-gray-700 mb-1">
             Grade Level:
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             {(['3rd', '4th', '5th', '6th'] as GradeLevel[]).map((grade) => (
               <button
                 key={grade}
                 onClick={() => handleGradeLevelChange(grade)}
-                className={`flex-1 py-2 px-3 rounded-lg font-semibold text-child-xs transition-all ${
+                className={`flex-1 py-1 px-2 rounded-lg font-semibold text-[10px] transition-all ${
                   settings.gradeLevel === grade
                     ? 'bg-primary-500 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -98,20 +98,19 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
 
         {/* Humor Level */}
         <div>
-          <label className="block text-child-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-[11px] font-semibold text-gray-700 mb-1">
             Humor Level:
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex gap-1">
             {([
-              { value: 'none', label: 'None' },
-              { value: 'light', label: 'Light' },
-              { value: 'moderate', label: 'Moderate' },
-              { value: 'heavy', label: 'Heavy' },
+              { value: 'min', label: 'Min' },
+              { value: 'max', label: 'Max' },
+              { value: 'insane', label: 'Insane' },
             ] as { value: HumorLevel; label: string }[]).map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => handleHumorLevelChange(value)}
-                className={`py-2 px-3 rounded-lg font-semibold text-child-xs transition-all ${
+                className={`flex-1 py-1 px-2 rounded-lg font-semibold text-[10px] transition-all ${
                   settings.humorLevel === value
                     ? 'bg-accent-500 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -127,21 +126,20 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
 
         {/* Visual Theme */}
         <div>
-          <label className="block text-child-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-[11px] font-semibold text-gray-700 mb-1">
             Visual Theme:
           </label>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-1">
             {([
               { value: 'space', label: 'Space', emoji: '🚀' },
               { value: 'jungle', label: 'Jungle', emoji: '🌴' },
-              { value: 'deepSea', label: 'Deep Sea', emoji: '🌊' },
               { value: 'minecraft', label: 'Minecraft', emoji: '⛏️' },
               { value: 'tron', label: 'Tron', emoji: '💠' },
             ] as { value: VisualTheme; label: string; emoji: string }[]).map(({ value, label, emoji }) => (
               <button
                 key={value}
                 onClick={() => handleThemeChange(value)}
-                className={`w-full text-left py-2 px-3 rounded-lg font-semibold text-child-xs transition-all flex items-center gap-2 ${
+                className={`text-center py-1 px-1 rounded-lg font-semibold text-[10px] transition-all flex flex-col items-center gap-0.5 ${
                   settings.visualTheme === value
                     ? 'bg-purple-500 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -149,7 +147,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
                 aria-label={`Select ${label} theme`}
                 aria-pressed={settings.visualTheme === value}
               >
-                <span className="text-lg" aria-hidden="true">{emoji}</span>
+                <span className="text-base" aria-hidden="true">{emoji}</span>
                 <span>{label}</span>
               </button>
             ))}
@@ -157,20 +155,20 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
         </div>
       </div>
 
-      {/* Custom Vocabulary Card */}
-      <div className="card py-3 px-4 space-y-2">
-        <h3 className="text-child-base font-bold text-gray-900 border-b-2 border-gray-200 pb-2">
-          📚 Custom Vocabulary (Optional)
+      {/* Optional Vocabulary Card */}
+      <div className="card py-1.5 px-2 space-y-1">
+        <h3 className="text-child-xs font-bold text-gray-900 border-b border-gray-200 pb-1">
+          📚 Optional Vocabulary
         </h3>
         <textarea
           value={settings.customVocabulary?.join(', ') || ''}
           onChange={handleCustomVocabularyChange}
           placeholder="basketball, teamwork, victory, strategy, champion"
-          className="w-full p-2 border border-gray-300 rounded-lg text-child-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
-          rows={3}
+          className="w-full p-1.5 border border-gray-300 rounded-lg text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+          rows={2}
           aria-label="Custom vocabulary words (comma-separated)"
         />
-        <p className="text-[11px] text-gray-600 italic">
+        <p className="text-[10px] text-gray-600 italic">
           Comma-separated words to include in the story
         </p>
       </div>

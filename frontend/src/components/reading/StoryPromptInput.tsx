@@ -39,10 +39,6 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
 
   return (
     <div className="card py-3 px-4 space-y-3">
-      <h2 className="text-child-base font-bold text-gray-900 border-b-2 border-gray-200 pb-2">
-        ✨ Create Your Story
-      </h2>
-
       {/* Story Prompt Input */}
       <div className="relative">
         <label htmlFor="story-prompt" className="block text-child-sm font-semibold text-gray-700 mb-2">

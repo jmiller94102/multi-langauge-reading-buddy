@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { PageLayout } from '@/components/layout/PageLayout';
+import type { SidebarTab as SidebarTabType } from '@/components/layout/CollapsibleSidebar';
 import { StorySettings } from '@/components/reading/StorySettings';
 import { LanguageSettings } from '@/components/reading/LanguageSettings';
 import { StoryPromptInput } from '@/components/reading/StoryPromptInput';
@@ -12,10 +15,15 @@ import { defaultStorySettings, defaultLanguageSettings } from '@/types/story';
 import { defaultQuizSettings } from '@/types/quiz';
 import { mockPet } from '@/utils/mockData';
 import { calculateXPMultiplier, calculateCoinBonus } from '@/data/petEvolution';
+import { NAV_ITEMS } from '@/types/navigation';
 
 type ReadingState = 'input' | 'generating' | 'reading' | 'quiz' | 'complete';
 
 export const Reading: React.FC = () => {
+  // Navigation
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // State management
   const [currentState, setCurrentState] = useState<ReadingState>('input');
   const [storySettings, setStorySettings] = useState<StorySettingsType>(defaultStorySettings);
@@ -24,13 +32,61 @@ export const Reading: React.FC = () => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Collapsible sidebar state
-  const [currentBlendLevel, setCurrentBlendLevel] = useState(languageSettings.blendLevel); // Real-time blend level
-  const [showHints, setShowHints] = useState(true); // Real-time hint toggle
-  const [showRomanization, setShowRomanization] = useState(true); // Real-time romanization toggle
 
   // TODO: Replace with actual pet state from PetContext in Phase 2+
   const pet = mockPet;
+
+  // Create custom sidebar tabs for Reading page
+  const settingsTabContent = (
+    <div className="space-y-1.5">
+      <StorySettings settings={storySettings} onChange={setStorySettings} />
+      <LanguageSettings settings={languageSettings} onChange={setLanguageSettings} />
+    </div>
+  );
+
+  const pagesTabContent = (
+    <div className="space-y-1">
+      {NAV_ITEMS.map((item) => {
+        const isActive = location.pathname === item.path;
+        return (
+          <button
+            key={item.id}
+            onClick={() => navigate(item.path)}
+            className={`w-full text-left py-1.5 px-2 rounded-lg font-semibold text-[11px] transition-all flex items-center gap-1.5 ${
+              isActive
+                ? 'bg-primary-500 text-white shadow-md'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+            aria-label={item.ariaLabel}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <span className="text-base" aria-hidden="true">
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const customSidebarTabs: SidebarTabType[] = [
+    {
+      id: 'reading',
+      label: 'Reading',
+      icon: '📖',
+      content: settingsTabContent,
+    },
+    {
+      id: 'pages',
+      label: 'Pages',
+      icon: '🧭',
+      content: pagesTabContent,
+    },
+  ];
+
+  // Use customTabs approach to avoid double sidebar
+  const shouldShowCustomTabs = currentState === 'input' || currentState === 'reading';
 
   const handlePromptChange = (prompt: string) => {
     setStorySettings({ ...storySettings, prompt });
@@ -118,112 +174,11 @@ export const Reading: React.FC = () => {
   };
 
   return (
-    <div className="relative">
-      {/* Sidebar Toggle Button (Fixed Position) */}
-      {(currentState === 'input' || currentState === 'reading') && (
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="fixed left-0 top-24 z-50 bg-primary-600 hover:bg-primary-700 text-white px-2 py-4 rounded-r-lg shadow-lg transition-all duration-300 hover:px-3"
-          style={{
-            left: sidebarOpen ? '504px' : '0px',
-            transition: 'left 0.3s ease',
-          }}
-          aria-label={sidebarOpen ? 'Close settings panel' : 'Open settings panel'}
-        >
-          <span className="text-xl font-bold">
-            {sidebarOpen ? '◀' : '▶'}
-          </span>
-        </button>
-      )}
-
-      {/* Collapsible Settings Sidebar */}
-      {(currentState === 'input' || currentState === 'reading') && (
-        <div
-          className="fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gray-50 border-r-2 border-gray-200 overflow-y-auto transition-all duration-300 shadow-lg z-40"
-          style={{
-            width: sidebarOpen ? '504px' : '0px',
-            padding: sidebarOpen ? '24px' : '0',
-            opacity: sidebarOpen ? 1 : 0,
-          }}
-        >
-          {sidebarOpen && (
-            <div className="space-y-3">
-              <h2 className="text-child-lg font-bold text-gray-900 mb-3 border-b-2 border-gray-300 pb-2">
-                ⚙️ Settings
-              </h2>
-              <StorySettings settings={storySettings} onChange={setStorySettings} />
-              <LanguageSettings settings={languageSettings} onChange={setLanguageSettings} />
-
-              {/* Real-Time Blend Level Slider (when reading) */}
-              {currentState === 'reading' && (
-                <div className="card py-3 px-4 space-y-2 bg-primary-50 border-2 border-primary-300">
-                  <h3 className="text-child-sm font-bold text-primary-900">
-                    🎚️ Real-Time Blend Level
-                  </h3>
-                  <p className="text-[11px] text-primary-700">
-                    Adjust how you view the story:
-                  </p>
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    value={currentBlendLevel}
-                    onChange={(e) => setCurrentBlendLevel(parseInt(e.target.value))}
-                    className="w-full h-2 bg-primary-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-                    aria-label="Blend level slider"
-                  />
-                  <div className="flex justify-between text-[10px] text-primary-700">
-                    <span>More Help</span>
-                    <span className="font-bold text-primary-900">Level {currentBlendLevel}</span>
-                    <span>Less Help</span>
-                  </div>
-                  <p className="text-[11px] text-primary-600 italic">
-                    {currentBlendLevel === 0 && '💡 Full assistance - See all hints'}
-                    {currentBlendLevel > 0 && currentBlendLevel <= 3 && '📚 Moderate help - Most hints visible'}
-                    {currentBlendLevel > 3 && currentBlendLevel <= 6 && '⚖️ Balanced - Some hints hidden'}
-                    {currentBlendLevel > 6 && currentBlendLevel < 10 && '🔥 Advanced - Minimal hints'}
-                    {currentBlendLevel === 10 && '🏆 Expert - Challenge yourself!'}
-                  </p>
-
-                  {/* Hint and Romanization Toggles */}
-                  <div className="space-y-2 pt-2 border-t border-primary-200">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showHints}
-                        onChange={(e) => setShowHints(e.target.checked)}
-                        className="w-4 h-4 accent-primary-600"
-                      />
-                      <span className="text-[11px] text-primary-800">Show translations</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showRomanization}
-                        onChange={(e) => setShowRomanization(e.target.checked)}
-                        className="w-4 h-4 accent-primary-600"
-                      />
-                      <span className="text-[11px] text-primary-800">Show romanization</span>
-                    </label>
-                  </div>
-
-                  <p className="text-[10px] text-primary-600 pt-2 border-t border-primary-200">
-                    💡 Tip: Try reading without hints for extra challenge!
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Main Content Area with Dynamic Margin */}
-      <div
-        className="space-y-3 transition-all duration-300 max-w-7xl mx-auto"
-        style={{
-          marginLeft: sidebarOpen && (currentState === 'input' || currentState === 'reading') ? '504px' : '0',
-        }}
-      >
+    <PageLayout
+      customTabs={shouldShowCustomTabs ? customSidebarTabs : undefined}
+      customDefaultTab={shouldShowCustomTabs ? 'reading' : undefined}
+    >
+      <div className="space-y-3">
         {/* State 1: Story Generation Input */}
         {currentState === 'input' && (
           <>
@@ -260,8 +215,8 @@ export const Reading: React.FC = () => {
               ✨ Generating Your Story
             </h2>
             <p className="text-child-base text-gray-700">
-              Creating a {storySettings.gradeLevel} grade story with {languageSettings.blendLevel * 10}%{' '}
-              {languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'} blending
+              Creating a {storySettings.gradeLevel} grade story at Level {languageSettings.blendLevel}{' '}
+              ({languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})
             </p>
             <p className="text-child-sm text-gray-600">
               This may take 10-15 seconds...
@@ -281,9 +236,9 @@ export const Reading: React.FC = () => {
               <StoryDisplay
                 story={story}
                 onFinish={handleFinishReading}
-                currentBlendLevel={currentBlendLevel}
-                showHints={showHints}
-                showRomanization={showRomanization}
+                currentBlendLevel={languageSettings.blendLevel}
+                showHints={languageSettings.showHints}
+                showRomanization={languageSettings.showRomanization}
               />
             </div>
 
@@ -457,6 +412,6 @@ export const Reading: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </PageLayout>
   );
 };

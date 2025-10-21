@@ -1,14 +1,37 @@
 /**
  * Client-Side Language Blending Utility
  *
- * Blends English and secondary language (Korean/Mandarin) sentences based on blend level (0-10)
+ * Blends English and secondary language (Korean/Mandarin) based on 5-level system (0-4)
  * WITHOUT making additional LLM calls - uses pre-generated translations from backend
+ *
+ * Architecture:
+ * - Level 0: 100% English
+ * - Level 1: Vocabulary recognition (inline translations for nouns + verbs)
+ * - Level 2: Noun immersion + sentence mixing (2:1 ratio)
+ * - Level 3: Balanced alternation (1:1 ratio)
+ * - Level 4: 100% Secondary language
  */
+
+export interface VocabularyWord {
+  english?: string; // For translated vocabulary from LLM-2
+  word?: string; // For extracted vocabulary from LLM-1
+  translation: string;
+  definition: string;
+  frequency?: number;
+}
+
+export interface Vocabulary {
+  nouns: VocabularyWord[];
+  verbs: VocabularyWord[];
+  adjectives?: VocabularyWord[];
+  adverbs?: VocabularyWord[];
+}
 
 export interface BlendedSentence {
   text: string;
   language: 'primary' | 'secondary';
   showHints: boolean;
+  hoverTranslation?: string; // For hover tooltip
 }
 
 export interface BlendResult {
@@ -17,47 +40,77 @@ export interface BlendResult {
 }
 
 /**
- * Blend level descriptions for UI feedback
+ * Blend level descriptions for UI feedback (5-level system)
  */
 const BLEND_DESCRIPTIONS: Record<number, string> = {
   0: '100% English - Perfect for beginners',
-  1: 'Key nouns in secondary language',
-  2: 'Nouns + verbs in secondary language',
-  3: 'Nouns + verbs + adjectives mixed',
-  4: 'Heavy word mixing (nouns/verbs/adj/adv)',
-  5: '2 English + 1 secondary sentence pattern',
-  6: 'More secondary sentences',
-  7: 'Alternating sentences',
-  8: 'Mostly secondary sentences',
-  9: 'Almost all secondary language',
-  10: '100% Secondary - Full immersion!',
+  1: 'Vocabulary recognition - Learn nouns and verbs with inline hints',
+  2: 'Noun immersion - Some Korean words, some Korean sentences (2:1)',
+  3: 'Balanced mix - Alternating sentences with noun hints (1:1)',
+  4: '100% Korean - Full immersion!',
 };
 
 /**
- * Calculate blend ratio based on level (0-10)
- * Returns: { primaryRatio, secondaryRatio } as percentage (0-1)
+ * Replace words in a sentence with their translations
+ * Format: **translation (english)** for inline hints
  */
-function getBlendRatio(level: number): { primaryRatio: number; secondaryRatio: number } {
-  const normalizedLevel = Math.max(0, Math.min(10, level));
-  const secondaryRatio = normalizedLevel / 10; // 0 = 0%, 10 = 100%
-  const primaryRatio = 1 - secondaryRatio;
-  return { primaryRatio, secondaryRatio };
+function replaceWords(
+  sentence: string,
+  words: VocabularyWord[]
+): string {
+  let result = sentence;
+
+  // Filter out words without english or word field
+  const validWords = words.filter(w => (w.english || w.word));
+
+  // Sort by word length (longest first) to avoid partial matches
+  const sortedWords = [...validWords].sort((a, b) => {
+    const aLen = (a.english || a.word || '').length;
+    const bLen = (b.english || b.word || '').length;
+    return bLen - aLen;
+  });
+
+  for (const word of sortedWords) {
+    const englishWord = word.english || word.word;
+    const translation = word.translation;
+    if (!englishWord || !translation) {
+      continue;
+    }
+
+    // Case-insensitive word boundary matching
+    const regex = new RegExp(`\\b${englishWord}\\b`, 'gi');
+
+    result = result.replace(regex, (match) => {
+      // Preserve original case for first letter
+      const firstChar = match.charAt(0);
+      const isCapitalized = firstChar === firstChar.toUpperCase();
+      const formattedTranslation = isCapitalized && translation.length > 0
+        ? translation.charAt(0).toUpperCase() + translation.slice(1)
+        : translation;
+
+      return `**${formattedTranslation} (${match})**`;
+    });
+  }
+
+  return result;
 }
 
 /**
- * Blend two sentence arrays based on level (0-10)
+ * Blend two sentence arrays based on 5-level system (0-4)
  *
  * @param primarySentences - English sentences
  * @param secondarySentences - Korean/Mandarin sentences (same length as primarySentences)
- * @param blendLevel - 0 (all primary) to 10 (all secondary)
- * @returns Blended sentence array with language tags
+ * @param blendLevel - 0 (all primary) to 4 (all secondary)
+ * @param vocabulary - Vocabulary words by part of speech
+ * @returns Blended sentence array with language tags and hover translations
  */
 export function blendSentences(
   primarySentences: string[],
   secondarySentences: string[],
-  blendLevel: number
+  blendLevel: number,
+  vocabulary?: Vocabulary
 ): BlendResult {
-  const level = Math.max(0, Math.min(10, blendLevel));
+  const level = Math.max(0, Math.min(4, blendLevel));
   const sentences: BlendedSentence[] = [];
 
   // Type predicate to filter out undefined values
@@ -65,138 +118,158 @@ export function blendSentences(
     return typeof text === 'string' && text.length > 0;
   };
 
-  // Handle edge cases
+  // LEVEL 0: 100% English - No blending
   if (level === 0) {
-    // 100% English
     return {
       sentences: primarySentences.filter(isValidString).map(text => ({
         text,
         language: 'primary' as const,
         showHints: false
       })),
-      description: BLEND_DESCRIPTIONS[0] || '100% English - Perfect for beginners'
+      description: BLEND_DESCRIPTIONS[0] || '100% English'
     };
   }
 
-  if (level === 10) {
-    // 100% Secondary
-    const sentencesToUse = secondarySentences && secondarySentences.length > 0 ? secondarySentences : primarySentences;
+  // LEVEL 4: 100% Secondary - Full immersion
+  if (level === 4) {
+    const sentencesToUse = secondarySentences && secondarySentences.length > 0
+      ? secondarySentences
+      : primarySentences;
+
     return {
-      sentences: sentencesToUse.filter(isValidString).map(text => ({
+      sentences: sentencesToUse.filter(isValidString).map((text, idx) => ({
         text,
         language: 'secondary' as const,
-        showHints: false
+        showHints: false,
+        hoverTranslation: primarySentences[idx] // Hover shows English translation
       })),
-      description: BLEND_DESCRIPTIONS[10] || '100% Secondary - Full immersion!'
+      description: BLEND_DESCRIPTIONS[4] || '100% Secondary'
     };
   }
 
-  // Calculate ratios
-  const { primaryRatio, secondaryRatio } = getBlendRatio(level);
-  const totalSentences = primarySentences.length;
+  // Combine nouns and verbs for word replacement
+  const wordsToReplace: VocabularyWord[] = [
+    ...(vocabulary?.nouns || []),
+    ...(vocabulary?.verbs || [])
+  ];
 
-  // Determine pattern based on level
-  if (level >= 1 && level <= 4) {
-    // FUTURE: Word-level blending (nouns → verbs → adjectives → adverbs)
-    // For now: Gradually introduce secondary sentences
-    // Level 1: Every 5th sentence, Level 2: Every 4th, Level 3: Every 3rd, Level 4: Every 2nd
-    const secondaryFrequency = 6 - level; // 5, 4, 3, 2
-    for (let i = 0; i < totalSentences; i++) {
-      const primarySentence = primarySentences[i];
-      if (!primarySentence) continue;
-
-      const secondarySentence = secondarySentences?.[i];
-      const useSecondary = i > 0 && i % secondaryFrequency === 0 && !!secondarySentence;
+  // LEVEL 1: Vocabulary Recognition
+  // English sentences with inline translations for nouns + verbs
+  if (level === 1) {
+    primarySentences.filter(isValidString).forEach((primarySentence) => {
+      const blendedText = replaceWords(primarySentence, wordsToReplace);
       sentences.push({
-        text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
-        language: useSecondary ? 'secondary' : 'primary',
-        showHints: useSecondary,
+        text: blendedText,
+        language: 'primary',
+        showHints: true,
       });
-    }
-  } else if (level === 5) {
-    // 2 English + 1 secondary pattern
-    for (let i = 0; i < totalSentences; i++) {
-      const primarySentence = primarySentences[i];
-      if (!primarySentence) continue;
+    });
 
-      const secondarySentence = secondarySentences?.[i];
-      const useSecondary = i % 3 === 2 && !!secondarySentence; // Every 3rd sentence is secondary
-      sentences.push({
-        text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
-        language: useSecondary ? 'secondary' : 'primary',
-        showHints: useSecondary,
-      });
-    }
-  } else if (level === 6) {
-    // 1 English + 1 secondary (more secondary sentences)
-    for (let i = 0; i < totalSentences; i++) {
-      const primarySentence = primarySentences[i];
-      if (!primarySentence) continue;
-
-      const secondarySentence = secondarySentences?.[i];
-      const useSecondary = i % 2 === 1 && !!secondarySentence;
-      sentences.push({
-        text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
-        language: useSecondary ? 'secondary' : 'primary',
-        showHints: useSecondary,
-      });
-    }
-  } else if (level === 7) {
-    // Alternating sentences (same as level 6 but more hints)
-    for (let i = 0; i < totalSentences; i++) {
-      const primarySentence = primarySentences[i];
-      if (!primarySentence) continue;
-
-      const secondarySentence = secondarySentences?.[i];
-      const useSecondary = i % 2 === 0 && !!secondarySentence; // Start with secondary
-      sentences.push({
-        text: useSecondary && secondarySentence ? secondarySentence : primarySentence,
-        language: useSecondary ? 'secondary' : 'primary',
-        showHints: true, // Show hints at this level
-      });
-    }
-  } else if (level === 8) {
-    // 1 English + 2 secondary pattern
-    for (let i = 0; i < totalSentences; i++) {
-      const primarySentence = primarySentences[i];
-      if (!primarySentence) continue;
-
-      const secondarySentence = secondarySentences?.[i];
-      const usePrimary = i % 3 === 0; // Every 3rd sentence is primary
-      const text = usePrimary ? primarySentence : (secondarySentence || primarySentence);
-      sentences.push({
-        text,
-        language: usePrimary ? 'primary' : 'secondary',
-        showHints: !usePrimary,
-      });
-    }
-  } else if (level === 9) {
-    // Mostly secondary (1 primary per 4 sentences)
-    for (let i = 0; i < totalSentences; i++) {
-      const primarySentence = primarySentences[i];
-      if (!primarySentence) continue;
-
-      const secondarySentence = secondarySentences?.[i];
-      const usePrimary = i % 4 === 0; // Every 4th sentence is primary
-      const text = usePrimary ? primarySentence : (secondarySentence || primarySentence);
-      sentences.push({
-        text,
-        language: usePrimary ? 'primary' : 'secondary',
-        showHints: !usePrimary,
-      });
-    }
+    return {
+      sentences,
+      description: BLEND_DESCRIPTIONS[1] || 'Vocabulary recognition'
+    };
   }
 
+  // LEVEL 2: Noun Immersion + Sentence Mixing (2:1 ratio)
+  // Pattern: English sentence, English sentence, Korean sentence (with English noun hints)
+  if (level === 2) {
+    // Level 2 includes both nouns and verbs for more immersion
+    const wordsToReplace: VocabularyWord[] = [
+      ...(vocabulary?.nouns || []),
+      ...(vocabulary?.verbs || [])
+    ];
+    const nounsOnly = vocabulary?.nouns || [];
+
+    primarySentences.forEach((primarySentence, i) => {
+      if (!primarySentence) return;
+
+      const secondarySentence = secondarySentences?.[i];
+      const useSecondary = i % 3 === 2 && !!secondarySentence; // Every 3rd sentence
+
+      if (useSecondary && secondarySentence) {
+        // Korean sentence with English noun hints
+        const blendedSecondary = replaceWords(secondarySentence, nounsOnly);
+        sentences.push({
+          text: blendedSecondary,
+          language: 'secondary',
+          showHints: true,
+          hoverTranslation: primarySentence
+        });
+      } else {
+        // English sentence with Korean nouns AND verbs (more immersion than Level 1)
+        const blendedPrimary = replaceWords(primarySentence, wordsToReplace);
+        sentences.push({
+          text: blendedPrimary,
+          language: 'primary',
+          showHints: true,
+        });
+      }
+    });
+
+    return {
+      sentences,
+      description: BLEND_DESCRIPTIONS[2] || 'Noun immersion'
+    };
+  }
+
+  // LEVEL 3: Balanced Alternation (1:1 ratio)
+  // Pattern: English sentence, Korean sentence (with English noun hints), repeat
+  if (level === 3) {
+    // Level 3 includes both nouns and verbs (consistent with Level 2)
+    const wordsToReplace: VocabularyWord[] = [
+      ...(vocabulary?.nouns || []),
+      ...(vocabulary?.verbs || [])
+    ];
+    const nounsOnly = vocabulary?.nouns || [];
+
+    primarySentences.forEach((primarySentence, i) => {
+      if (!primarySentence) return;
+
+      const secondarySentence = secondarySentences?.[i];
+      const useSecondary = i % 2 === 1 && !!secondarySentence; // Alternate starting with English
+
+      if (useSecondary && secondarySentence) {
+        // Korean sentence with English noun hints
+        const blendedSecondary = replaceWords(secondarySentence, nounsOnly);
+        sentences.push({
+          text: blendedSecondary,
+          language: 'secondary',
+          showHints: true,
+          hoverTranslation: primarySentence
+        });
+      } else {
+        // English sentence with Korean nouns AND verbs (consistent immersion)
+        const blendedPrimary = replaceWords(primarySentence, wordsToReplace);
+        sentences.push({
+          text: blendedPrimary,
+          language: 'primary',
+          showHints: true,
+        });
+      }
+    });
+
+    return {
+      sentences,
+      description: BLEND_DESCRIPTIONS[3] || 'Balanced mix'
+    };
+  }
+
+  // Fallback
   return {
-    sentences,
-    description: BLEND_DESCRIPTIONS[level] || `Blend level ${level}`,
+    sentences: primarySentences.filter(isValidString).map(text => ({
+      text,
+      language: 'primary' as const,
+      showHints: false
+    })),
+    description: BLEND_DESCRIPTIONS[0] || '100% English'
   };
 }
 
 /**
- * Get description for a blend level
+ * Get description for a blend level (5-level system: 0-4)
  */
 export function getBlendDescription(level: number): string {
-  const normalizedLevel = Math.max(0, Math.min(10, level));
+  const normalizedLevel = Math.max(0, Math.min(4, level));
   return BLEND_DESCRIPTIONS[normalizedLevel] || `Blend level ${normalizedLevel}`;
 }

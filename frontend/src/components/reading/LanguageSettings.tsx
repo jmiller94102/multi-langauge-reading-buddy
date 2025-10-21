@@ -16,6 +16,10 @@ export const LanguageSettings: React.FC<LanguageSettingsProps> = ({ settings, on
     onChange({ ...settings, [key]: value });
   };
 
+  const handleBlendLevelChange = (blendLevel: number) => {
+    onChange({ ...settings, blendLevel });
+  };
+
   if (collapsed) {
     return null; // Language settings typically not shown when collapsed
   }
@@ -61,10 +65,34 @@ export const LanguageSettings: React.FC<LanguageSettingsProps> = ({ settings, on
         </div>
       </div>
 
-      {/* Info: Blend level now controlled by real-time slider while reading */}
+      {/* Blend Level Slider */}
       <div className="bg-primary-50 rounded-lg p-2 border border-primary-200">
-        <p className="text-[11px] text-primary-800">
-          💡 <strong>Tip:</strong> Use the blend level slider while reading to adjust difficulty in real-time!
+        <label className="block text-child-xs font-semibold text-primary-900 mb-1">
+          🎚️ Real-Time Blend Level
+        </label>
+        <p className="text-[10px] text-primary-700 mb-1.5">
+          Adjust how you view the story:
+        </p>
+        <input
+          type="range"
+          min="0"
+          max="4"
+          value={settings.blendLevel}
+          onChange={(e) => handleBlendLevelChange(parseInt(e.target.value))}
+          className="w-full h-2 bg-primary-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+          aria-label="Blend level slider"
+        />
+        <div className="flex justify-between text-[10px] text-primary-700 mt-1">
+          <span>More English</span>
+          <span className="font-bold text-primary-900">Level {settings.blendLevel}</span>
+          <span>More {settings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'}</span>
+        </div>
+        <p className="text-[10px] text-primary-600 italic mt-1.5">
+          {settings.blendLevel === 0 && '💡 Vocabulary recognition - Learn nouns and verbs'}
+          {settings.blendLevel === 1 && '📚 Vocabulary recognition - Learn nouns and verbs with inline hints'}
+          {settings.blendLevel === 2 && '⚖️ Noun immersion + sentence mixing (2:1)'}
+          {settings.blendLevel === 3 && '🔥 Balanced mix - Alternating sentences (1:1)'}
+          {settings.blendLevel === 4 && `🏆 100% ${settings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'} - Full immersion!`}
         </p>
       </div>
 

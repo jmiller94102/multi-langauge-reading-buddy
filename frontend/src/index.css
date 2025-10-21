@@ -7,11 +7,15 @@
   html {
     @apply antialiased;
     font-size: 18px; /* Base font size for children (COPPA recommendation) */
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   body {
     @apply font-sans text-child-sm text-gray-900 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50;
     min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   /* High contrast for accessibility (WCAG AA) */

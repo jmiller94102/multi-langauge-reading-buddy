@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { PageLayout } from '@/components/layout';
 import { Dashboard } from './pages/Dashboard';
 import { Reading } from './pages/Reading';
 import { Achievements } from './pages/Achievements';
@@ -11,26 +10,24 @@ import { ComponentShowcase } from './pages/ComponentShowcase';
 function App() {
   return (
     <Router>
-      <PageLayout>
-        <Routes>
-          {/* Default route redirects to Dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Routes>
+        {/* Default route redirects to Dashboard */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Main app pages */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/reading" element={<Reading />} />
-          <Route path="/achievements" element={<Achievements />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/profile" element={<Profile />} />
+        {/* Main app pages */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/reading" element={<Reading />} />
+        <Route path="/achievements" element={<Achievements />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/progress" element={<Progress />} />
+        <Route path="/profile" element={<Profile />} />
 
-          {/* Component showcase for testing */}
-          <Route path="/showcase" element={<ComponentShowcase />} />
+        {/* Component showcase for testing */}
+        <Route path="/showcase" element={<ComponentShowcase />} />
 
-          {/* 404 fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </PageLayout>
+        {/* 404 fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </Router>
   );
 }

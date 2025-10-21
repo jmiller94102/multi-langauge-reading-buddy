@@ -1,7 +1,7 @@
 // Story Types for Reading Page
 
 export type GradeLevel = '3rd' | '4th' | '5th' | '6th';
-export type HumorLevel = 'none' | 'light' | 'moderate' | 'heavy';
+export type HumorLevel = 'min' | 'max' | 'insane';
 export type VisualTheme = 'space' | 'jungle' | 'deepSea' | 'minecraft' | 'tron';
 export type SecondaryLanguage = 'ko' | 'zh'; // Korean | Mandarin
 
@@ -16,7 +16,7 @@ export interface StorySettings {
 
 export interface LanguageSettings {
   secondaryLanguage: SecondaryLanguage;
-  blendLevel: number; // 0-10 (0% to 100% in 10% increments)
+  blendLevel: number; // 0-4 (5-level system: 0=100% English, 4=100% Secondary)
   showHints: boolean; // Show inline translations
   showRomanization: boolean; // Show phonetic spelling
   audioEnabled: boolean; // Enable audio reading
@@ -36,6 +36,21 @@ export interface StoryParagraph {
   blendedWords: BlendedWord[]; // Foreign words in this paragraph
 }
 
+export interface VocabularyWord {
+  english?: string; // For translated vocabulary from LLM-2
+  word?: string; // For extracted vocabulary from LLM-1
+  translation: string;
+  definition: string;
+  frequency?: number;
+}
+
+export interface Vocabulary {
+  nouns: VocabularyWord[];
+  verbs: VocabularyWord[];
+  adjectives?: VocabularyWord[];
+  adverbs?: VocabularyWord[];
+}
+
 export interface Story {
   id: string;
   title: string;
@@ -48,7 +63,8 @@ export interface Story {
   secondaryContent?: string; // Full Korean/Mandarin story
   primarySentences: string[]; // English sentences for blending
   secondarySentences?: string[]; // Korean/Mandarin sentences for blending
-  vocabularyMap?: Record<string, { translation: string; romanization: string }>; // Word hints
+  vocabularyMap?: Record<string, { translation: string; romanization: string }>; // Legacy word hints
+  vocabulary?: Vocabulary; // NEW: Frequency-filtered vocabulary by POS
 
   settings: StorySettings;
   languageSettings: LanguageSettings;
@@ -82,17 +98,17 @@ export interface StoryGenerationResponse {
 
 // Initial default settings
 export const defaultStorySettings: StorySettings = {
-  prompt: '',
+  prompt: 'A story of Pikachu battling Gangar in a Pokemon tournament. His friends Ash and Charmander are cheering him on. The weather is cloudy and about to rain. Pikachu is supercharged by lightning.',
   length: 500,
   gradeLevel: '4th',
-  humorLevel: 'moderate',
-  visualTheme: 'space',
+  humorLevel: 'insane',
+  visualTheme: 'tron',
   customVocabulary: [],
 };
 
 export const defaultLanguageSettings: LanguageSettings = {
   secondaryLanguage: 'ko',
-  blendLevel: 4, // 40% Korean blending
+  blendLevel: 2, // Level 2: Noun immersion + sentence mixing (2:1)
   showHints: true,
   showRomanization: true,
   audioEnabled: true,

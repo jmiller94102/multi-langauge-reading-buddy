@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PageLayout } from '@/components/layout/PageLayout';
 import { WelcomeSection } from '@/components/dashboard/WelcomeSection';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { QuestCard } from '@/components/dashboard/QuestCard';
@@ -145,7 +146,8 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto">
+    <PageLayout>
+      <div className="space-y-3 max-w-7xl mx-auto">
       {/* Welcome Section - Compact */}
       <WelcomeSection user={user} />
 
@@ -271,6 +273,7 @@ export const Dashboard: React.FC = () => {
           onClose={handleModalClose}
         />
       )}
-    </div>
+      </div>
+    </PageLayout>
   );
 };

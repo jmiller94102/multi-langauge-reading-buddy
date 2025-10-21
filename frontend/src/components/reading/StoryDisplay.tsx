@@ -6,7 +6,7 @@ import { blendSentences } from '@/utils/languageBlending';
 interface StoryDisplayProps {
   story: Story;
   onFinish: () => void;
-  currentBlendLevel?: number; // Real-time blend level (0-10)
+  currentBlendLevel?: number; // Real-time blend level (0-4: 5-level system)
   showHints?: boolean; // Real-time hint toggle
   showRomanization?: boolean; // Real-time romanization toggle
 }
@@ -14,7 +14,7 @@ interface StoryDisplayProps {
 export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   story,
   onFinish,
-  currentBlendLevel = 4,
+  currentBlendLevel = 2,
   showHints = true,
   showRomanization = true,
 }) => {
@@ -33,9 +33,10 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
     return blendSentences(
       story.primarySentences,
       story.secondarySentences || story.primarySentences,
-      currentBlendLevel
+      currentBlendLevel,
+      story.vocabulary
     );
-  }, [story.primarySentences, story.secondarySentences, currentBlendLevel]);
+  }, [story.primarySentences, story.secondarySentences, currentBlendLevel, story.vocabulary]);
 
   useEffect(() => {
     const handleScroll = (e: Event) => {
@@ -73,6 +74,59 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
   // Render a single sentence with vocabulary hints
   const renderSentence = (text: string, language: 'primary' | 'secondary', sentenceShowHints: boolean, idx: number) => {
+    // For primary language with hints (Level 1), parse markdown-style replacements
+    if (language === 'primary' && sentenceShowHints && showHints) {
+      const parts: React.ReactNode[] = [];
+      // Match pattern: **translation (english)**
+      const regex = /\*\*([^(]+)\(([^)]+)\)\*\*/g;
+      let lastIndex = 0;
+      let match;
+      let partIndex = 0;
+
+      while ((match = regex.exec(text)) !== null) {
+        // Add text before the match
+        if (match.index > lastIndex) {
+          parts.push(
+            <span key={`text-${idx}-${partIndex++}`}>
+              {text.substring(lastIndex, match.index)}
+            </span>
+          );
+        }
+
+        // Add the matched word with hint
+        const translation = match[1]?.trim() || '';
+        const english = match[2]?.trim() || '';
+        parts.push(
+          <span
+            key={`word-${idx}-${partIndex++}`}
+            className="font-semibold text-primary-700 cursor-help hover:text-primary-900"
+            title={`💡 ${translation}`}
+          >
+            {translation}
+            <span className="text-gray-600 font-normal text-[12px] ml-1">({english})</span>
+          </span>
+        );
+
+        lastIndex = regex.lastIndex;
+      }
+
+      // Add remaining text after last match
+      if (lastIndex < text.length) {
+        parts.push(
+          <span key={`text-end-${idx}`}>
+            {text.substring(lastIndex)}
+          </span>
+        );
+      }
+
+      // If no matches were found, just return plain text
+      if (parts.length === 0) {
+        return <span>{text}</span>;
+      }
+
+      return <>{parts}</>;
+    }
+
     // For secondary language sentences, add hints for vocabulary words
     if (language === 'secondary' && sentenceShowHints && showHints && story.vocabularyMap) {
       const parts: React.ReactNode[] = [];
@@ -130,7 +184,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
             📖 {story.title}
           </h2>
           <p className="text-[11px] text-gray-600">
-            {story.wordCount} words • {story.settings.gradeLevel} Grade • {story.languageSettings.blendLevel * 10}% {story.languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'}
+            {story.wordCount} words • {story.settings.gradeLevel} Grade • Level {currentBlendLevel} ({story.languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})
           </p>
         </div>
 
@@ -214,19 +268,35 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         >
           {blendedContent ? (
             // NEW: Sentence-based blending (real-time adjustable)
-            <div className="space-y-3">
-              {blendedContent.sentences.map((sentence, idx) => (
-                <p
-                  key={`sentence-${idx}`}
-                  className={`text-child-base leading-relaxed ${
-                    sentence.language === 'secondary'
-                      ? 'text-primary-800 font-medium'
-                      : 'text-gray-900'
-                  }`}
-                >
-                  {renderSentence(sentence.text, sentence.language, sentence.showHints, idx)}
-                </p>
-              ))}
+            // Group sentences into paragraphs (4-5 sentences per paragraph for better readability)
+            <div className="space-y-4">
+              {(() => {
+                const paragraphs: Array<Array<(typeof blendedContent.sentences)[0]>> = [];
+                const sentencesPerParagraph = 4;
+
+                for (let i = 0; i < blendedContent.sentences.length; i += sentencesPerParagraph) {
+                  paragraphs.push(blendedContent.sentences.slice(i, i + sentencesPerParagraph));
+                }
+
+                return paragraphs.map((paragraphSentences, pIdx) => (
+                  <p key={`paragraph-${pIdx}`} className="text-child-base leading-relaxed text-gray-900">
+                    {paragraphSentences.map((sentence, sIdx) => (
+                      <span
+                        key={`sentence-${pIdx}-${sIdx}`}
+                        className={
+                          sentence.language === 'secondary'
+                            ? 'text-primary-800 font-medium cursor-help'
+                            : ''
+                        }
+                        title={sentence.hoverTranslation ? `💡 ${sentence.hoverTranslation}` : undefined}
+                      >
+                        {renderSentence(sentence.text, sentence.language, sentence.showHints, pIdx * sentencesPerParagraph + sIdx)}
+                        {sIdx < paragraphSentences.length - 1 && ' '}
+                      </span>
+                    ))}
+                  </p>
+                ));
+              })()}
             </div>
           ) : (
             // FALLBACK: Legacy paragraph-based rendering
