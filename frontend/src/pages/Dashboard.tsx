@@ -9,21 +9,23 @@ import { VirtualPetWidget } from '@/components/dashboard/VirtualPetWidget';
 import { EvolutionAnimation } from '@/components/pet/EvolutionAnimation';
 import { EvolutionModal } from '@/components/pet/EvolutionModal';
 import { usePetEvolution } from '@/hooks/usePetEvolution';
-import { mockUser, mockPet, mockDailyQuests, mockWeeklyQuests } from '@/utils/mockData';
+import { useUser } from '@/contexts/UserContext';
+import { usePet } from '@/contexts/PetContext';
+import { useQuests } from '@/contexts/QuestContext';
+import { useAchievements } from '@/contexts/AchievementContext';
 import { getFoodById } from '@/data/foods';
 import { getFoodReaction } from '@/data/petEvolution';
-import type { Quest } from '@/types/quest';
 import type { PetEmotion } from '@/types/pet';
 
 export const Dashboard: React.FC = () => {
-  // TODO: Replace with actual context/state management in Phase 2+
-  const [user, setUser] = useState(mockUser);
-  const [pet, setPet] = useState(mockPet);
-  const [dailyQuests, setDailyQuests] = useState<Quest[]>(mockDailyQuests);
-  const [weeklyQuests, setWeeklyQuests] = useState<Quest[]>(mockWeeklyQuests);
+  // Context integration
+  const { user, addXP, addCoins, addGems, spendCoins, spendGems } = useUser();
+  const { pet, feedPet: contextFeedPet, playWithPet, boostPet } = usePet();
+  const { dailyQuests, weeklyQuests, claimQuest } = useQuests();
+  const { achievements } = useAchievements();
 
-  const totalAchievements = 24; // TODO: Get from achievement data
-  const unlockedAchievements = 8; // TODO: Calculate from achievements
+  const totalAchievements = achievements.length;
+  const unlockedAchievements = achievements.filter(a => a.unlocked).length;
 
   // Pet Evolution System
   const {
@@ -37,7 +39,7 @@ export const Dashboard: React.FC = () => {
   } = usePetEvolution({
     pet,
     userLevel: user.level,
-    onPetUpdate: setPet,
+    onPetUpdate: async () => {}, // Evolution handled by context
   });
 
   // Filter out streak quest from daily quests (shown separately now)
@@ -57,21 +59,23 @@ export const Dashboard: React.FC = () => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleClaimQuest = (questId: string) => {
-    // Update daily quests
-    setDailyQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, status: 'claimed' as const } : q))
-    );
-    // Update weekly quests
-    setWeeklyQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, status: 'claimed' as const } : q))
-    );
-    // TODO: Add rewards to user (XP, coins, gems)
-    // TODO: Show celebration animation
+  const handleClaimQuest = async (questId: string) => {
+    // Claim quest and get rewards
+    const rewards = await claimQuest(questId);
+
+    if (rewards) {
+      // Apply rewards to user
+      await addXP(rewards.xp);
+      await addCoins(rewards.coins);
+      if (rewards.gems > 0) {
+        await addGems(rewards.gems);
+      }
+      // TODO: Show celebration animation
+    }
   };
 
   // Pet interaction handlers
-  const handleFeedFood = (foodId: string, price: number) => {
+  const handleFeedFood = async (foodId: string, price: number) => {
     // Check if user can afford the food
     if (user.coins < price) return;
 
@@ -82,34 +86,19 @@ export const Dashboard: React.FC = () => {
     // Get pet's reaction to this food (includes track-specific bonuses)
     const { emotion, effect } = getFoodReaction(foodId, pet.evolutionTrack);
 
-    // Update pet state
-    setPet((prev) => {
-      const updatedPet = {
-        ...prev,
-        hunger: Math.max(0, prev.hunger - effect.hungerReduction),
-        happiness: Math.min(100, prev.happiness + effect.happinessChange),
-        emotion: emotion as PetEmotion,
-        lastFed: Date.now(),
-        lastInteraction: Date.now(),
-      };
+    // Deduct coins first
+    const success = await spendCoins(price);
+    if (!success) return;
 
-      // Add food to tried history if not already tried
-      if (!prev.foodsTriedHistory.includes(foodId)) {
-        updatedPet.foodsTriedHistory = [...prev.foodsTriedHistory, foodId];
-      }
-
-      return updatedPet;
-    });
-
-    // Deduct coins
-    setUser((prev) => ({ ...prev, coins: prev.coins - price }));
+    // Feed pet using context
+    await contextFeedPet(foodId);
 
     // Apply track-specific bonuses if this is a favorite food
     if (effect.bonusType && effect.bonusAmount) {
       if (effect.bonusType === 'xp') {
-        setUser((prev) => ({ ...prev, xp: prev.xp + effect.bonusAmount! }));
+        await addXP(effect.bonusAmount);
       } else if (effect.bonusType === 'coins') {
-        setUser((prev) => ({ ...prev, coins: prev.coins + effect.bonusAmount! }));
+        await addCoins(effect.bonusAmount);
       }
       // languageBonus would be applied during quiz completion
     }
@@ -118,30 +107,20 @@ export const Dashboard: React.FC = () => {
     // TODO: Show bonus notification if favorite food
   };
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (pet.energy >= 20) {
-      setPet((prev) => ({
-        ...prev,
-        happiness: Math.min(100, prev.happiness + 20),
-        energy: Math.max(0, prev.energy - 20),
-        lastPlayed: Date.now(),
-        lastInteraction: Date.now(),
-      }));
+      await playWithPet();
       // TODO: Add play animation
     }
   };
 
-  const handleBoost = () => {
+  const handleBoost = async () => {
     if (user.gems >= 1) {
-      setPet((prev) => ({
-        ...prev,
-        happiness: Math.min(100, prev.happiness + 30),
-        hunger: Math.max(0, prev.hunger - 20),
-        energy: Math.min(100, prev.energy + 30),
-        lastInteraction: Date.now(),
-      }));
-      setUser((prev) => ({ ...prev, gems: prev.gems - 1 }));
-      // TODO: Add boost animation
+      const success = await spendGems(1);
+      if (success) {
+        await boostPet();
+        // TODO: Add boost animation
+      }
     }
   };
 

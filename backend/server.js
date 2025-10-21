@@ -25,6 +25,20 @@ const client = new AzureOpenAI({
   apiVersion: process.env.AZURE_OPENAI_API_VERSION,
 });
 
+// In-memory storage (MVP - will be replaced with database later)
+const storage = {
+  users: new Map(),
+  pets: new Map(),
+  quests: new Map(),
+  achievements: new Map(),
+  settings: new Map(),
+};
+
+// Helper to get user ID from session (for MVP, use a default user)
+const getUserId = (req) => {
+  return req.cookies?.userId || 'default_user';
+};
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -32,6 +46,96 @@ app.get('/api/health', (req, res) => {
     message: 'Backend server is running',
     timestamp: Date.now(),
   });
+});
+
+// User endpoints
+app.get('/api/user', (req, res) => {
+  const userId = getUserId(req);
+  const user = storage.users.get(userId);
+  if (user) {
+    res.json(user);
+  } else {
+    res.status(404).json({ success: false, error: 'User not found' });
+  }
+});
+
+app.put('/api/user', (req, res) => {
+  const userId = getUserId(req);
+  const userData = req.body;
+  storage.users.set(userId, userData);
+  res.json({ success: true, data: userData });
+});
+
+// Pet endpoints
+app.get('/api/pet', (req, res) => {
+  const userId = getUserId(req);
+  const pet = storage.pets.get(userId);
+  if (pet) {
+    res.json(pet);
+  } else {
+    res.status(404).json({ success: false, error: 'Pet not found' });
+  }
+});
+
+app.put('/api/pet', (req, res) => {
+  const userId = getUserId(req);
+  const petData = req.body;
+  storage.pets.set(userId, petData);
+  res.json({ success: true, data: petData });
+});
+
+// Quest endpoints
+app.get('/api/quests', (req, res) => {
+  const userId = getUserId(req);
+  const quests = storage.quests.get(userId);
+  if (quests) {
+    res.json(quests);
+  } else {
+    res.status(404).json({ success: false, error: 'Quests not found' });
+  }
+});
+
+app.put('/api/quests', (req, res) => {
+  const userId = getUserId(req);
+  const questData = req.body;
+  storage.quests.set(userId, questData);
+  res.json({ success: true, data: questData });
+});
+
+// Achievement endpoints
+app.get('/api/achievements', (req, res) => {
+  const userId = getUserId(req);
+  const achievements = storage.achievements.get(userId);
+  if (achievements) {
+    res.json(achievements);
+  } else {
+    res.status(404).json({ success: false, error: 'Achievements not found' });
+  }
+});
+
+app.put('/api/achievements', (req, res) => {
+  const userId = getUserId(req);
+  const achievementData = req.body;
+  storage.achievements.set(userId, achievementData);
+  res.json({ success: true, data: achievementData });
+});
+
+// Settings endpoints
+app.get('/api/settings', (req, res) => {
+  const userId = getUserId(req);
+  const settings = storage.settings.get(userId);
+  if (settings) {
+    res.json(settings);
+  } else {
+    res.status(404).json({ success: false, error: 'Settings not found' });
+  }
+});
+
+app.put('/api/settings', (req, res) => {
+  const userId = getUserId(req);
+  const settingsData = req.body;
+  storage.settings.set(userId, settingsData);
+  res.json({ success: true, data: settingsData });
 });
 
 // Helper function to split text into sentences

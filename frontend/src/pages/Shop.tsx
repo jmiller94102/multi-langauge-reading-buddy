@@ -3,13 +3,15 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { getFoodsByOrigin, type Food } from '@/data/foods';
 import { POWER_UPS, getCosmeticsByTrack } from '@/data/shopItems';
 import type { Cosmetic, PowerUp } from '@/types/shop';
-import { mockUser } from '@/utils/mockData';
+import { useUser } from '@/contexts/UserContext';
+import { usePet } from '@/contexts/PetContext';
 
 type TabType = 'foods' | 'cosmetics' | 'powerups';
 
 export const Shop: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('foods');
-  const [user, setUser] = useState(mockUser);
+  const { user, spendCoins, spendGems, addToInventory } = useUser();
+  const { equipAccessory } = usePet();
   const [selectedItem, setSelectedItem] = useState<Food | Cosmetic | PowerUp | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -18,7 +20,7 @@ export const Shop: React.FC = () => {
     setShowConfirmation(true);
   };
 
-  const confirmPurchase = () => {
+  const confirmPurchase = async () => {
     if (!selectedItem) return;
 
     const price = 'price' in selectedItem ? selectedItem.price : 0;
@@ -37,13 +39,37 @@ export const Shop: React.FC = () => {
     }
 
     // Deduct currency
+    let success = false;
     if (gemPrice) {
-      setUser(prev => ({ ...prev, gems: prev.gems - gemPrice }));
+      success = await spendGems(gemPrice);
     } else {
-      setUser(prev => ({ ...prev, coins: prev.coins - price }));
+      success = await spendCoins(price);
     }
 
-    // TODO: Add item to inventory
+    if (!success) {
+      alert('Purchase failed - insufficient funds!');
+      setShowConfirmation(false);
+      return;
+    }
+
+    // Add item to inventory based on category
+    if ('emoji' in selectedItem) {
+      // It's a Food item
+      await addToInventory(selectedItem.id, 'foods');
+    } else if ('type' in selectedItem) {
+      // It's a Cosmetic item
+      await addToInventory(selectedItem.id, 'cosmetics');
+      // Auto-equip if there's space
+      try {
+        await equipAccessory(selectedItem.id);
+      } catch (error) {
+        console.log('Could not auto-equip accessory:', error);
+      }
+    } else {
+      // It's a PowerUp item
+      await addToInventory(selectedItem.id, 'powerUps');
+    }
+
     alert(`Purchased ${selectedItem.name}!`);
     setShowConfirmation(false);
     setSelectedItem(null);

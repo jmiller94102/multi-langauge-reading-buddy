@@ -4,21 +4,40 @@ import { ProgressSummary } from '@/components/achievements/ProgressSummary';
 import { FilterControls, type FilterOption, type SortOption } from '@/components/achievements/FilterControls';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
 import { MotivationalSection } from '@/components/achievements/MotivationalSection';
-import { ACHIEVEMENTS, getUnlockedAchievements, getNextAchievement, getAchievementProgress } from '@/data/achievements';
+import { useAchievements } from '@/contexts/AchievementContext';
 import type { Achievement } from '@/types/achievement';
 
+// Helper function for achievement progress calculation
+function getAchievementProgress(achievement: Achievement): number {
+  if (achievement.unlocked) return 100;
+  return Math.min(100, (achievement.currentProgress / achievement.targetValue) * 100);
+}
+
+// Helper function to get next achievement
+function getNextAchievement(achievements: Achievement[]): Achievement | null {
+  const lockedAchievements = achievements.filter(a => !a.unlocked);
+  if (lockedAchievements.length === 0) return null;
+
+  return lockedAchievements.sort((a, b) => {
+    const progressA = getAchievementProgress(a);
+    const progressB = getAchievementProgress(b);
+    return progressB - progressA; // Highest progress first
+  })[0] || null;
+}
+
 export const Achievements: React.FC = () => {
+  const { achievements, unlockedAchievements } = useAchievements();
   const [filter, setFilter] = useState<FilterOption>('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const unlockedCount = getUnlockedAchievements().length;
-  const totalCount = ACHIEVEMENTS.length;
-  const nextAchievement = getNextAchievement();
+  const unlockedCount = unlockedAchievements.length;
+  const totalCount = achievements.length;
+  const nextAchievement = getNextAchievement(achievements);
 
   // Filter, sort, and search achievements
   const filteredAchievements = useMemo(() => {
-    let filtered = [...ACHIEVEMENTS];
+    let filtered = [...achievements];
 
     // Apply filter
     if (filter === 'unlocked') {
@@ -61,7 +80,7 @@ export const Achievements: React.FC = () => {
     });
 
     return filtered;
-  }, [filter, sort, searchQuery]);
+  }, [achievements, filter, sort, searchQuery]);
 
   const handleAchievementClick = (achievement: Achievement) => {
     // TODO: Show achievement modal in Phase 6 (Animations & Polish)

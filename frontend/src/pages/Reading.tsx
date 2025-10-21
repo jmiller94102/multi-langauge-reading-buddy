@@ -13,7 +13,10 @@ import type { StorySettings as StorySettingsType, LanguageSettings as LanguageSe
 import type { Quiz, QuizResult } from '@/types/quiz';
 import { defaultStorySettings, defaultLanguageSettings } from '@/types/story';
 import { defaultQuizSettings } from '@/types/quiz';
-import { mockPet } from '@/utils/mockData';
+import { useUser } from '@/contexts/UserContext';
+import { usePet } from '@/contexts/PetContext';
+import { useQuests } from '@/contexts/QuestContext';
+import { useAchievements } from '@/contexts/AchievementContext';
 import { calculateXPMultiplier, calculateCoinBonus } from '@/data/petEvolution';
 import { NAV_ITEMS } from '@/types/navigation';
 
@@ -24,6 +27,12 @@ export const Reading: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Context integration
+  const { user, addXP, addCoins, updateStats } = useUser();
+  const { pet } = usePet();
+  const { updateQuestProgress, completeQuest } = useQuests();
+  const { checkAchievements } = useAchievements();
+
   // State management
   const [currentState, setCurrentState] = useState<ReadingState>('input');
   const [storySettings, setStorySettings] = useState<StorySettingsType>(defaultStorySettings);
@@ -32,9 +41,6 @@ export const Reading: React.FC = () => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // TODO: Replace with actual pet state from PetContext in Phase 2+
-  const pet = mockPet;
 
   // Create custom sidebar tabs for Reading page
   const settingsTabContent = (
@@ -118,7 +124,7 @@ export const Reading: React.FC = () => {
     }
   };
 
-  const handleQuizComplete = (result: QuizResult) => {
+  const handleQuizComplete = async (result: QuizResult) => {
     // Apply pet track bonuses
     const xpMultiplier = calculateXPMultiplier(pet.evolutionTrack, pet.evolutionStage);
     const coinBonus = calculateCoinBonus(pet.evolutionTrack, pet.evolutionStage);
@@ -153,12 +159,39 @@ export const Reading: React.FC = () => {
     setQuizResult(enhancedResult);
     setCurrentState('complete');
 
-    // TODO: Apply rewards to user state in Phase 2+
-    // setUser((prev) => ({
-    //   ...prev,
-    //   xp: prev.xp + totalXP,
-    //   coins: prev.coins + totalCoins,
-    // }));
+    // Apply rewards to user
+    await addXP(totalXP);
+    await addCoins(totalCoins);
+
+    // Update user stats
+    const isPerfectScore = result.score === 100;
+    await updateStats({
+      totalReadings: user.stats.totalReadings + 1,
+      totalQuizzes: user.stats.totalQuizzes + 1,
+      totalCorrectAnswers: user.stats.totalCorrectAnswers + result.correctAnswers,
+      averageQuizScore: Math.round(
+        ((user.stats.averageQuizScore * user.stats.totalQuizzes) + result.score) / (user.stats.totalQuizzes + 1)
+      ),
+    });
+
+    // Update quest progress
+    await updateQuestProgress('daily-1', 1); // Reading quest
+    if (result.score >= 80) {
+      await completeQuest('daily-2'); // Quiz master quest (80%+)
+    }
+    if (languageSettings.blendLevel >= 3) {
+      await completeQuest('daily-3'); // Language explorer quest
+    }
+    await updateQuestProgress('weekly-1', 1); // Weekly reading quest
+    await updateQuestProgress('weekly-3', totalXP); // Weekly XP quest
+
+    // Check for achievement unlocks
+    await checkAchievements({
+      totalReadings: user.stats.totalReadings + 1,
+      totalQuizzes: user.stats.totalQuizzes + 1,
+      perfectScores: isPerfectScore ? (user.stats as any).perfectScores + 1 : (user.stats as any).perfectScores,
+      streak: user.streak,
+    });
   };
 
   const handleNewStory = () => {

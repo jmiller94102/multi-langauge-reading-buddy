@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PetCharacter } from '@/components/pet/PetCharacter';
 import { EVOLUTION_STAGE_NAMES } from '@/data/petEvolution';
-import { mockUser, mockPet } from '@/utils/mockData';
+import { useUser } from '@/contexts/UserContext';
+import { usePet } from '@/contexts/PetContext';
 import type { PetEvolutionTrack } from '@/types/pet';
 import type { UserSettings } from '@/types/user';
 
 export const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(mockUser);
-  const [pet, setPet] = useState(mockPet);
+
+  // Use contexts
+  const { user, updateSettings } = useUser();
+  const { pet, updatePetName, changePetTrack } = usePet();
+
+  // Local state for form fields
+  const [localSettings, setLocalSettings] = useState<UserSettings>(user.settings);
   const [petName, setPetName] = useState(pet.name);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  // Sync local state when user context changes
+  useEffect(() => {
+    setLocalSettings(user.settings);
+  }, [user.settings]);
+
+  // Sync pet name when pet context changes
+  useEffect(() => {
+    setPetName(pet.name);
+  }, [pet.name]);
 
   // Track which settings sections are expanded (for mobile)
   const [expandedSections, setExpandedSections] = useState({
@@ -30,17 +46,14 @@ export const Profile: React.FC = () => {
     key: K,
     value: UserSettings[K]
   ) => {
-    setUser((prev) => ({
+    setLocalSettings((prev) => ({
       ...prev,
-      settings: {
-        ...prev.settings,
-        [key]: value,
-      },
+      [key]: value,
     }));
     setHasUnsavedChanges(true);
   };
 
-  const handleTrackChange = (newTrack: PetEvolutionTrack) => {
+  const handleTrackChange = async (newTrack: PetEvolutionTrack) => {
     if (newTrack === pet.evolutionTrack) return;
 
     const confirmed = window.confirm(
@@ -48,8 +61,14 @@ export const Profile: React.FC = () => {
     );
 
     if (confirmed) {
-      setPet((prev) => ({ ...prev, evolutionTrack: newTrack }));
-      setHasUnsavedChanges(true);
+      try {
+        await changePetTrack(newTrack);
+        setShowSaveSuccess(true);
+        setTimeout(() => setShowSaveSuccess(false), 2000);
+      } catch (error) {
+        console.error('Failed to change pet track:', error);
+        alert('Failed to change evolution track. Please try again.');
+      }
     }
   };
 
@@ -60,25 +79,31 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const handleSaveChanges = () => {
-    // Update pet name
-    setPet((prev) => ({ ...prev, name: petName }));
+  const handleSaveChanges = async () => {
+    try {
+      // Save user settings
+      await updateSettings(localSettings);
 
-    // TODO: Save to localStorage or API
-    console.log('Saving changes:', { user, pet, petName });
+      // Save pet name if changed
+      if (petName !== pet.name && petName.length >= 3) {
+        await updatePetName(petName);
+      }
 
-    setHasUnsavedChanges(false);
-    setShowSaveSuccess(true);
+      setHasUnsavedChanges(false);
+      setShowSaveSuccess(true);
 
-    // Hide success message after 2 seconds
-    setTimeout(() => setShowSaveSuccess(false), 2000);
+      // Hide success message after 2 seconds
+      setTimeout(() => setShowSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to save changes:', error);
+      alert('Failed to save settings. Please try again.');
+    }
   };
 
   const handleDiscardChanges = () => {
-    // Reset to mock data
-    setUser(mockUser);
-    setPet(mockPet);
-    setPetName(mockPet.name);
+    // Reset to context data
+    setLocalSettings(user.settings);
+    setPetName(pet.name);
     setHasUnsavedChanges(false);
   };
 
@@ -165,7 +190,7 @@ export const Profile: React.FC = () => {
                       <label className="flex items-center gap-2 text-child-xs">
                         <input
                           type="radio"
-                          checked={user.settings.secondaryLanguage === 'ko'}
+                          checked={localSettings.secondaryLanguage === 'ko'}
                           onChange={() => handleSettingChange('secondaryLanguage', 'ko')}
                         />
                         <span>🇰🇷 Korean</span>
@@ -173,7 +198,7 @@ export const Profile: React.FC = () => {
                       <label className="flex items-center gap-2 text-child-xs">
                         <input
                           type="radio"
-                          checked={user.settings.secondaryLanguage === 'zh'}
+                          checked={localSettings.secondaryLanguage === 'zh'}
                           onChange={() => handleSettingChange('secondaryLanguage', 'zh')}
                         />
                         <span>🇨🇳 Mandarin</span>
@@ -184,20 +209,20 @@ export const Profile: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-child-xs mb-1">
                       <span className="font-semibold text-gray-700">Default Blend Level:</span>
-                      <span className="font-bold text-primary-600">{user.settings.languageBlendLevel}/10</span>
+                      <span className="font-bold text-primary-600">{localSettings.languageBlendLevel}/10</span>
                     </div>
                     <input
                       type="range"
                       min="0"
                       max="10"
-                      value={user.settings.languageBlendLevel}
+                      value={localSettings.languageBlendLevel}
                       onChange={(e) => handleSettingChange('languageBlendLevel', parseInt(e.target.value))}
                       className="w-full"
                     />
                     <div className="flex justify-between text-[10px] text-gray-600">
                       <span>0% (English)</span>
                       <span>50%</span>
-                      <span>100% ({user.settings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})</span>
+                      <span>100% ({localSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})</span>
                     </div>
                   </div>
 
@@ -206,7 +231,7 @@ export const Profile: React.FC = () => {
                     <label className="flex items-center gap-2 text-child-xs">
                       <input
                         type="checkbox"
-                        checked={user.settings.showHints}
+                        checked={localSettings.showHints}
                         onChange={(e) => handleSettingChange('showHints', e.target.checked)}
                       />
                       <span>Show translation hints</span>
@@ -214,7 +239,7 @@ export const Profile: React.FC = () => {
                     <label className="flex items-center gap-2 text-child-xs">
                       <input
                         type="checkbox"
-                        checked={user.settings.showRomanization}
+                        checked={localSettings.showRomanization}
                         onChange={(e) => handleSettingChange('showRomanization', e.target.checked)}
                       />
                       <span>Show romanization</span>
@@ -222,7 +247,7 @@ export const Profile: React.FC = () => {
                     <label className="flex items-center gap-2 text-child-xs">
                       <input
                         type="checkbox"
-                        checked={user.settings.audioEnabled}
+                        checked={localSettings.audioEnabled}
                         onChange={(e) => handleSettingChange('audioEnabled', e.target.checked)}
                       />
                       <span>Audio support</span>
@@ -251,7 +276,7 @@ export const Profile: React.FC = () => {
                         <label key={theme} className="flex items-center gap-2 text-child-xs">
                           <input
                             type="radio"
-                            checked={user.settings.theme === theme}
+                            checked={localSettings.theme === theme}
                             onChange={() => handleSettingChange('theme', theme as any)}
                           />
                           <span className="capitalize">
@@ -273,7 +298,7 @@ export const Profile: React.FC = () => {
                         <label key={size} className="flex items-center gap-2 text-child-xs">
                           <input
                             type="radio"
-                            checked={user.settings.fontSize === size}
+                            checked={localSettings.fontSize === size}
                             onChange={() => handleSettingChange('fontSize', size)}
                           />
                           <span className="capitalize">{size}</span>
@@ -287,7 +312,7 @@ export const Profile: React.FC = () => {
                     <label className="flex items-center gap-2 text-child-xs">
                       <input
                         type="checkbox"
-                        checked={user.settings.highContrast}
+                        checked={localSettings.highContrast}
                         onChange={(e) => handleSettingChange('highContrast', e.target.checked)}
                       />
                       <span>High contrast mode</span>
@@ -295,7 +320,7 @@ export const Profile: React.FC = () => {
                     <label className="flex items-center gap-2 text-child-xs">
                       <input
                         type="checkbox"
-                        checked={user.settings.reducedMotion}
+                        checked={localSettings.reducedMotion}
                         onChange={(e) => handleSettingChange('reducedMotion', e.target.checked)}
                       />
                       <span>Reduce motion</span>
@@ -320,14 +345,14 @@ export const Profile: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-child-xs mb-1">
                       <span className="font-semibold text-gray-700">Audio Speed:</span>
-                      <span className="font-bold text-primary-600">{user.settings.audioSpeed}x</span>
+                      <span className="font-bold text-primary-600">{localSettings.audioSpeed}x</span>
                     </div>
                     <input
                       type="range"
                       min="0.5"
                       max="2"
                       step="0.1"
-                      value={user.settings.audioSpeed}
+                      value={localSettings.audioSpeed}
                       onChange={(e) => handleSettingChange('audioSpeed', parseFloat(e.target.value))}
                       className="w-full"
                     />
