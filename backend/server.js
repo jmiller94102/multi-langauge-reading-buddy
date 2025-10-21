@@ -302,7 +302,7 @@ Return JSON:
         { role: 'user', content: JSON.stringify(translationInput, null, 2) }
       ],
       temperature: 0.3, // Lower temperature for more accurate translation
-      max_tokens: 8000,
+      max_tokens: 12000, // Increased to prevent Korean/Chinese translation truncation
       response_format: { type: 'json_object' }
     });
 
