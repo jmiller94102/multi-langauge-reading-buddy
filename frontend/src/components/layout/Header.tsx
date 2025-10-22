@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -8,11 +9,11 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ className }) => {
   const navigate = useNavigate();
+  const { user } = useUser();
 
-  // TODO: Replace with actual user data from UserContext in Phase 2
-  const coins = 125;
-  const gems = 45;
-  const streak = 7;
+  const coins = user.coins;
+  const gems = user.gems;
+  const streak = user.streak;
 
   return (
     <header

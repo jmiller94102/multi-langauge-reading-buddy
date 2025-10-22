@@ -2,6 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/common/Button';
 import type { Story } from '@/types/story';
 import { blendSentences } from '@/utils/languageBlending';
+import { AudioPlayer, type WordTiming } from '@/components/reading/AudioPlayer';
+import { HighlightedText } from '@/components/reading/HighlightedText';
+import { generateAudio, type AudioData } from '@/services/azureOpenAI';
+import { useStory } from '@/contexts/StoryContext';
 
 interface StoryDisplayProps {
   story: Story;
@@ -20,8 +24,15 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [wordsRead, setWordsRead] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+
+  // Get audio data from context (persists across navigation)
+  const { currentAudioData: audioData, setCurrentAudioData: setAudioData } = useStory();
+
+  // Audio generation state (local to component)
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
+  const [generationProgress, setGenerationProgress] = useState<string>('');
 
   // Real-time sentence blending based on current blend level
   const blendedContent = useMemo(() => {
@@ -59,17 +70,45 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
     }
   }, [story.wordCount]);
 
-  const handlePlayPause = () => {
-    // TODO: Implement audio playback in Phase 8 (BONUS)
-    setIsPlaying(!isPlaying);
-    alert('Audio playback coming soon in Phase 8!');
+  // Generate audio from story content
+  const handleGenerateAudio = async () => {
+    setIsGeneratingAudio(true);
+    setAudioError(null);
+
+    try {
+      // Progressive feedback - makes wait time feel shorter
+      setGenerationProgress('Preparing your narrator...');
+
+      setTimeout(() => setGenerationProgress('Generating speech...'), 1000);
+      setTimeout(() => setGenerationProgress('Processing audio...'), 3000);
+      setTimeout(() => setGenerationProgress('Almost ready...'), 5000);
+
+      // Get secondary language text (Korean/Mandarin) for pronunciation practice
+      // Kids already know English - they need to HEAR the target language!
+      // Filter out paragraph break markers before joining
+      const fullText = story.secondarySentences && story.secondarySentences.length > 0
+        ? story.secondarySentences.filter(s => s !== '__PARAGRAPH_BREAK__').join(' ')
+        : story.primarySentences?.filter(s => s !== '__PARAGRAPH_BREAK__').join(' ') || story.paragraphs?.map(p => p.content).join(' ') || '';
+
+      // Choose voice based on language for better pronunciation
+      const voice = story.languageSettings.secondaryLanguage === 'ko' ? 'nova' : 'shimmer';
+
+      // Generate audio with OpenAI TTS (multilingual voices support Korean/Mandarin)
+      const data = await generateAudio(fullText, voice, 1.0);
+      setAudioData(data);
+      setGenerationProgress('');
+    } catch (error) {
+      console.error('Failed to generate audio:', error);
+      setAudioError(error instanceof Error ? error.message : 'Failed to generate audio');
+      setGenerationProgress('');
+    } finally {
+      setIsGeneratingAudio(false);
+    }
   };
 
-  const handleSpeedChange = () => {
-    const speeds = [0.75, 1.0, 1.25, 1.5];
-    const currentIndex = speeds.indexOf(playbackSpeed);
-    const nextSpeed = speeds[(currentIndex + 1) % speeds.length] || 1.0;
-    setPlaybackSpeed(nextSpeed);
+  // Handle word change during audio playback
+  const handleWordChange = (wordIndex: number) => {
+    setCurrentWordIndex(wordIndex);
   };
 
   // Render a single sentence with vocabulary hints
@@ -189,55 +228,34 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         </div>
 
         {/* Audio Controls */}
-        <div>
-          <p className="text-child-sm font-semibold text-gray-700 mb-2">Controls:</p>
-          <div className="grid grid-cols-4 gap-2">
+        {!audioData && (
+          <div>
+            <p className="text-child-sm font-semibold text-gray-700 mb-2">Listen to Story:</p>
             <Button
-              variant="outline"
-              size="small"
-              onClick={handlePlayPause}
-              className="flex-col h-auto py-2"
-              aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
+              variant="primary"
+              size="medium"
+              onClick={handleGenerateAudio}
+              disabled={isGeneratingAudio}
+              className="w-full"
+              aria-label="Generate audio narration"
             >
-              <span className="text-lg mb-0.5" aria-hidden="true">
-                {isPlaying ? '⏸️' : '▶️'}
-              </span>
-              <span className="text-[10px] font-semibold">
-                {isPlaying ? 'Pause' : 'Play'}
-              </span>
+              {isGeneratingAudio ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  <span className="text-child-sm">{generationProgress || 'Generating Audio...'}</span>
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <span aria-hidden="true">🎧</span>
+                  <span className="text-child-sm font-bold">Listen to Story</span>
+                </span>
+              )}
             </Button>
-
-            <Button
-              variant="outline"
-              size="small"
-              onClick={() => alert('Read aloud feature coming soon!')}
-              className="flex-col h-auto py-2"
-              aria-label="Read aloud"
-            >
-              <span className="text-lg mb-0.5" aria-hidden="true">🎧</span>
-              <span className="text-[10px] font-semibold">Read</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              size="small"
-              onClick={handleSpeedChange}
-              className="flex-col h-auto py-2"
-              aria-label={`Playback speed ${playbackSpeed}x`}
-            >
-              <span className="text-lg mb-0.5" aria-hidden="true">📊</span>
-              <span className="text-[10px] font-semibold">{playbackSpeed}x</span>
-            </Button>
-
-            <div className="flex flex-col items-center justify-center bg-primary-50 rounded px-2 py-1">
-              <div className="text-[9px] text-primary-700 font-semibold">Level {currentBlendLevel}</div>
-              <div className="text-[8px] text-gray-600">
-                {showHints && '✓ Hints'}
-                {!showHints && showRomanization && '✓ Roman'}
-              </div>
-            </div>
+            {audioError && (
+              <p className="text-child-xs text-red-600 mt-2">⚠️ {audioError}</p>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Progress Bar */}
         <div>
@@ -259,6 +277,26 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
         </div>
       </div>
 
+      {/* Audio Player */}
+      {audioData && (
+        <AudioPlayer
+          audioUrl={audioData.audioUrl}
+          wordTimings={audioData.wordTimings}
+          duration={audioData.duration}
+          onWordChange={handleWordChange}
+        />
+      )}
+
+      {/* Audio Mode Notice */}
+      {audioData && currentWordIndex !== -1 && currentBlendLevel !== 4 && (
+        <div className="card py-2 px-3 bg-blue-50 border border-blue-300">
+          <p className="text-child-xs text-blue-700">
+            💡 <strong>Tip:</strong> Word highlighting works best at Blend Level 4 (100% {story.languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'}).
+            You can adjust the slider in the sidebar for more/less English support while listening.
+          </p>
+        </div>
+      )}
+
       {/* Story Content */}
       <div className="card py-4 px-4">
         <div
@@ -266,16 +304,50 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
           className="prose max-w-none overflow-y-auto max-h-[500px] pr-2"
           style={{ scrollbarWidth: 'thin' }}
         >
-          {blendedContent ? (
+          {audioData && currentWordIndex !== -1 && currentBlendLevel === 4 ? (
+            // AUDIO MODE (BLEND LEVEL 4 ONLY): Show secondary language with word highlighting
+            // At level 4 (100% secondary), word highlighting syncs perfectly with audio
+            // Filter out paragraph break markers before displaying
+            <div className="space-y-4">
+              <HighlightedText
+                text={story.secondarySentences && story.secondarySentences.length > 0
+                  ? story.secondarySentences.filter(s => s !== '__PARAGRAPH_BREAK__').join(' ')
+                  : story.primarySentences?.filter(s => s !== '__PARAGRAPH_BREAK__').join(' ') || story.paragraphs?.map(p => p.content).join(' ') || ''}
+                currentWordIndex={currentWordIndex}
+                className="text-child-base"
+              />
+            </div>
+          ) : blendedContent ? (
             // NEW: Sentence-based blending (real-time adjustable)
-            // Group sentences into paragraphs (4-5 sentences per paragraph for better readability)
+            // Group sentences into natural paragraphs based on paragraph break markers
             <div className="space-y-4">
               {(() => {
                 const paragraphs: Array<Array<(typeof blendedContent.sentences)[0]>> = [];
-                const sentencesPerParagraph = 4;
+                let currentParagraph: Array<(typeof blendedContent.sentences)[0]> = [];
 
-                for (let i = 0; i < blendedContent.sentences.length; i += sentencesPerParagraph) {
-                  paragraphs.push(blendedContent.sentences.slice(i, i + sentencesPerParagraph));
+                blendedContent.sentences.forEach((sentence) => {
+                  // Check if this is a paragraph break marker
+                  if (sentence.text === '__PARAGRAPH_BREAK__') {
+                    if (currentParagraph.length > 0) {
+                      paragraphs.push([...currentParagraph]);
+                      currentParagraph = [];
+                    }
+                  } else {
+                    currentParagraph.push(sentence);
+                  }
+                });
+
+                // Add final paragraph if it has content
+                if (currentParagraph.length > 0) {
+                  paragraphs.push(currentParagraph);
+                }
+
+                // Fallback: if no paragraphs formed, group sentences by 4
+                if (paragraphs.length === 0) {
+                  const sentencesPerParagraph = 4;
+                  for (let i = 0; i < blendedContent.sentences.length; i += sentencesPerParagraph) {
+                    paragraphs.push(blendedContent.sentences.slice(i, i + sentencesPerParagraph));
+                  }
                 }
 
                 return paragraphs.map((paragraphSentences, pIdx) => (
@@ -290,7 +362,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                         }
                         title={sentence.hoverTranslation ? `💡 ${sentence.hoverTranslation}` : undefined}
                       >
-                        {renderSentence(sentence.text, sentence.language, sentence.showHints, pIdx * sentencesPerParagraph + sIdx)}
+                        {renderSentence(sentence.text, sentence.language, sentence.showHints, pIdx * 100 + sIdx)}
                         {sIdx < paragraphSentences.length - 1 && ' '}
                       </span>
                     ))}

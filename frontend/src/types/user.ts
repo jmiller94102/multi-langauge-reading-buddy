@@ -28,6 +28,10 @@ export interface UserState {
     longestStreak: number;
   };
 
+  // Activity history
+  xpHistory: Array<{ amount: number; timestamp: number }>;
+  levelHistory: Array<{ level: number; timestamp: number }>;
+
   // Settings
   settings: UserSettings;
 }

@@ -17,8 +17,11 @@ import { useUser } from '@/contexts/UserContext';
 import { usePet } from '@/contexts/PetContext';
 import { useQuests } from '@/contexts/QuestContext';
 import { useAchievements } from '@/contexts/AchievementContext';
+import { useStory } from '@/contexts/StoryContext';
 import { calculateXPMultiplier, calculateCoinBonus } from '@/data/petEvolution';
 import { NAV_ITEMS } from '@/types/navigation';
+import { storyLibrary } from '@/services/storyLibraryService';
+import { useToast } from '@/contexts/ToastContext';
 
 type ReadingState = 'input' | 'generating' | 'reading' | 'quiz' | 'complete';
 
@@ -32,15 +35,16 @@ export const Reading: React.FC = () => {
   const { pet } = usePet();
   const { updateQuestProgress, completeQuest } = useQuests();
   const { checkAchievements } = useAchievements();
+  const { currentStory: story, currentQuiz: quiz, setCurrentStory: setStory, setCurrentQuiz: setQuiz, clearStory } = useStory();
+  const { showToast } = useToast();
 
-  // State management
-  const [currentState, setCurrentState] = useState<ReadingState>('input');
+  // State management (excluding story/quiz which are now in context)
+  const [currentState, setCurrentState] = useState<ReadingState>(story ? 'reading' : 'input');
   const [storySettings, setStorySettings] = useState<StorySettingsType>(defaultStorySettings);
   const [languageSettings, setLanguageSettings] = useState<LanguageSettingsType>(defaultLanguageSettings);
-  const [story, setStory] = useState<Story | null>(null);
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
 
   // Create custom sidebar tabs for Reading page
   const settingsTabContent = (
@@ -195,8 +199,7 @@ export const Reading: React.FC = () => {
   };
 
   const handleNewStory = () => {
-    setStory(null);
-    setQuiz(null);
+    clearStory(); // Clears both story and quiz from context and localStorage
     setQuizResult(null);
     setError(null);
     setCurrentState('input');
@@ -204,6 +207,19 @@ export const Reading: React.FC = () => {
 
   const handleBackToStory = () => {
     setCurrentState('reading');
+  };
+
+  const handleSaveStory = async () => {
+    if (!story) return;
+
+    try {
+      await storyLibrary.saveStory(story, quiz);
+      setIsSaved(true);
+      showToast('Story saved to library!', 'success');
+    } catch (error) {
+      console.error('Failed to save story:', error);
+      showToast('Failed to save story', 'error');
+    }
   };
 
   return (
@@ -327,6 +343,27 @@ export const Reading: React.FC = () => {
                   Toggle romanization to practice reading{' '}
                   {languageSettings.secondaryLanguage === 'ko' ? 'Hangul' : 'Chinese characters'}.
                 </p>
+              </div>
+
+              {/* Save Story */}
+              <div className="card py-3 px-4 space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">📚 Save Story</h3>
+                <Button
+                  variant={isSaved ? 'outline' : 'primary'}
+                  size="medium"
+                  onClick={handleSaveStory}
+                  disabled={isSaved}
+                  className="w-full"
+                  aria-label={isSaved ? 'Story saved' : 'Save story to library'}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <span aria-hidden="true">{isSaved ? '✓' : '💾'}</span>
+                    <span className="text-child-sm font-bold">{isSaved ? 'Saved!' : 'Save to Library'}</span>
+                  </span>
+                </Button>
+                {isSaved && (
+                  <p className="text-child-xs text-green-600 text-center">Story saved! View in Library.</p>
+                )}
               </div>
             </div>
           </div>

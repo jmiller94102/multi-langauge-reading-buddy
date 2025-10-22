@@ -3,6 +3,7 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { ProgressSummary } from '@/components/achievements/ProgressSummary';
 import { FilterControls, type FilterOption, type SortOption } from '@/components/achievements/FilterControls';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
+import { AchievementModal } from '@/components/achievements/AchievementModal';
 import { MotivationalSection } from '@/components/achievements/MotivationalSection';
 import { useAchievements } from '@/contexts/AchievementContext';
 import type { Achievement } from '@/types/achievement';
@@ -30,6 +31,7 @@ export const Achievements: React.FC = () => {
   const [filter, setFilter] = useState<FilterOption>('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
   const unlockedCount = unlockedAchievements.length;
   const totalCount = achievements.length;
@@ -83,8 +85,7 @@ export const Achievements: React.FC = () => {
   }, [achievements, filter, sort, searchQuery]);
 
   const handleAchievementClick = (achievement: Achievement) => {
-    // TODO: Show achievement modal in Phase 6 (Animations & Polish)
-    console.log('Achievement clicked:', achievement.title);
+    setSelectedAchievement(achievement);
   };
 
   return (
@@ -110,7 +111,7 @@ export const Achievements: React.FC = () => {
               <p className="text-child-xs text-gray-600 mb-3">
                 Showing {filteredAchievements.length} {filteredAchievements.length === 1 ? 'achievement' : 'achievements'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 {filteredAchievements.map((achievement) => (
                   <AchievementCard
                     key={achievement.id}
@@ -134,6 +135,12 @@ export const Achievements: React.FC = () => {
         {/* Motivational Section */}
         <MotivationalSection nextAchievement={nextAchievement} />
       </div>
+
+      {/* Achievement Detail Modal */}
+      <AchievementModal
+        achievement={selectedAchievement}
+        onClose={() => setSelectedAchievement(null)}
+      />
     </PageLayout>
   );
 };

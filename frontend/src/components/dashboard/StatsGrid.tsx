@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUser } from '@/contexts/UserContext';
 import type { UserState } from '@/types/user';
 
 interface StatsGridProps {
@@ -12,9 +13,10 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
   totalAchievements,
   unlockedAchievements,
 }) => {
+  const { getDailyXPGain } = useUser();
   const levelProgress = ((user.xp / user.xpToNextLevel) * 100).toFixed(0);
   const achievementProgress = ((unlockedAchievements / totalAchievements) * 100).toFixed(0);
-  const xpGainedToday = 150; // TODO: Calculate from user stats
+  const xpGainedToday = getDailyXPGain();
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">

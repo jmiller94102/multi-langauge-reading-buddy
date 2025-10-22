@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUser } from '@/contexts/UserContext';
 import type { UserState } from '@/types/user';
 import { ProgressBar } from '@/components/common/ProgressBar';
 
@@ -7,7 +8,8 @@ interface WelcomeSectionProps {
 }
 
 export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ user }) => {
-  const levelGainToday = 2; // TODO: Calculate from user stats
+  const { getDailyLevelGain } = useUser();
+  const levelGainToday = getDailyLevelGain();
 
   return (
     <section className="card py-3 px-4 space-y-2">

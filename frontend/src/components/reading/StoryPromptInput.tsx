@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/common/Button';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { StorySettings, LanguageSettings } from '@/types/story';
 
 interface StoryPromptInputProps {
@@ -19,19 +20,65 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
   onGenerate,
   isGenerating = false,
 }) => {
-  const [isRecording, setIsRecording] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const maxChars = 500;
   const charsRemaining = maxChars - prompt.length;
 
-  const handleMicrophoneClick = () => {
-    // TODO: Implement speech-to-text in Phase 2
-    // For now, just toggle recording state
-    setIsRecording(!isRecording);
+  // Speech recognition hook
+  const {
+    transcript,
+    isListening,
+    isSupported,
+    error: speechError,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechRecognition({
+    lang: 'en-US',
+    continuous: false,
+    interimResults: true,
+  });
 
-    // Placeholder: Show alert for now
-    if (!isRecording) {
-      alert('Speech-to-text feature coming soon! For now, please type your story idea.');
+  // Update prompt when transcript changes
+  useEffect(() => {
+    if (transcript.trim()) {
+      const newPrompt = prompt ? `${prompt} ${transcript}` : transcript;
+      const truncated = newPrompt.slice(0, maxChars);
+      onPromptChange(truncated);
+    }
+  }, [transcript]);
+
+  // Show speech errors
+  useEffect(() => {
+    if (speechError) {
+      setErrorMessage(speechError);
+      setTimeout(() => setErrorMessage(null), 5000);
+    }
+  }, [speechError]);
+
+  const handleMicrophoneClick = () => {
+    // Check browser support
+    if (!isSupported) {
+      setErrorMessage('Speech recognition is not supported in your browser. Please try Chrome, Edge, or Safari.');
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+
+    if (isListening) {
+      // Stop recording
+      stopListening();
+      if (transcript.trim()) {
+        setSuccessMessage('Speech recognized successfully!');
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+      resetTranscript();
+    } else {
+      // Start recording
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      startListening();
     }
   };
 
@@ -59,21 +106,36 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
           <button
             onClick={handleMicrophoneClick}
             className={`absolute right-3 top-3 p-2 rounded-full transition-all ${
-              isRecording
+              isListening
                 ? 'bg-red-500 text-white animate-pulse'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
-            aria-label="Use microphone for speech-to-text"
+            aria-label={isListening ? 'Stop recording' : 'Start recording'}
             disabled={isGenerating}
+            title={isListening ? 'Click to stop recording' : 'Click to start recording'}
           >
             <span className="text-lg" aria-hidden="true">🎤</span>
           </button>
         </div>
         <div className="flex justify-between items-center mt-1">
-          <p className="text-[11px] text-gray-600 italic">
-            {isRecording ? 'Recording... (speech-to-text coming soon)' : 'Type your story idea or click 🎤 to speak it'}
-          </p>
-          <p className={`text-[11px] font-semibold ${charsRemaining < 50 ? 'text-red-600' : 'text-gray-600'}`}>
+          <div className="flex-1">
+            {errorMessage ? (
+              <p className="text-[11px] text-red-600 font-semibold">
+                ⚠️ {errorMessage}
+              </p>
+            ) : successMessage ? (
+              <p className="text-[11px] text-green-600 font-semibold">
+                ✓ {successMessage}
+              </p>
+            ) : (
+              <p className="text-[11px] text-gray-600 italic">
+                {isListening
+                  ? '🔴 Listening... Speak your story idea now!'
+                  : 'Type your story idea or click 🎤 to speak it'}
+              </p>
+            )}
+          </div>
+          <p className={`text-[11px] font-semibold ml-2 ${charsRemaining < 50 ? 'text-red-600' : 'text-gray-600'}`}>
             {charsRemaining} chars left
           </p>
         </div>

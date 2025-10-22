@@ -14,10 +14,11 @@ const PORT = process.env.PORT || 8080;
 // Middleware
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests from localhost on ports 5173 and 5174 (Vite dev servers)
+    // Allow requests from localhost on ports 5173, 5174, and 5175 (Vite dev servers)
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://localhost:5175',
       process.env.FRONTEND_URL
     ].filter(Boolean);
 
@@ -31,7 +32,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Azure OpenAI Client (Secure - API key never exposed to frontend)
+// Azure OpenAI Client (for chat completions, TTS, and all Azure OpenAI services)
 const client = new AzureOpenAI({
   endpoint: process.env.AZURE_OPENAI_ENDPOINT,
   apiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -151,13 +152,28 @@ app.put('/api/settings', (req, res) => {
   res.json({ success: true, data: settingsData });
 });
 
-// Helper function to split text into sentences
+// Helper function to split text into sentences while preserving paragraph breaks
 function splitIntoSentences(text) {
-  // Split by sentence-ending punctuation, preserving the punctuation
-  return text
-    .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+  // First split by paragraph breaks (double newlines or single newlines)
+  const paragraphs = text.split(/\n\n+|\n/).filter(p => p.trim().length > 0);
+
+  // Then split each paragraph into sentences
+  const allSentences = [];
+  paragraphs.forEach((paragraph, pIndex) => {
+    const sentences = paragraph
+      .split(/(?<=[.!?])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    allSentences.push(...sentences);
+
+    // Add paragraph marker after last sentence of each paragraph (except the last paragraph)
+    if (pIndex < paragraphs.length - 1 && sentences.length > 0) {
+      allSentences.push('__PARAGRAPH_BREAK__');
+    }
+  });
+
+  return allSentences;
 }
 
 // Helper function to count word frequency in text
@@ -287,6 +303,8 @@ Return JSON:
     const translationSystemPrompt = `You are an expert translator specializing in children's literature.
 
 Translate the English story to ${langName}, maintaining the same meaning, tone, and sentence structure.
+
+IMPORTANT: Preserve paragraph breaks from the original English text. Use double newlines (\\n\\n) to separate paragraphs.
 
 ALSO translate each vocabulary word, matching the contextual meaning from the English definition.
 
@@ -433,6 +451,107 @@ app.post('/api/generate-quiz', async (req, res) => {
   }
 });
 
+// Text-to-Speech endpoint - Generate audio from story text
+app.post('/api/generate-audio', async (req, res) => {
+  try {
+    const { text, voice = 'alloy', speed = 1.0 } = req.body;
+    if (!text) {
+      return res.status(400).json({ success: false, error: 'Missing required field: text' });
+    }
+
+    console.log(`[${new Date().toISOString()}] Generating TTS audio: ${text.substring(0, 50)}... (voice: ${voice}, speed: ${speed})`);
+
+    // Generate audio using Azure OpenAI TTS deployment
+    const mp3 = await client.audio.speech.create({
+      model: process.env.AZURE_TTS_DEPLOYMENT || 'gpt-4o-mini-tts', // Azure TTS deployment name
+      voice: voice, // alloy, echo, fable, nova, shimmer (multilingual support)
+      input: text,
+      speed: speed, // 0.25 to 4.0
+    });
+
+    // Convert audio stream to buffer
+    const buffer = Buffer.from(await mp3.arrayBuffer());
+
+    // Calculate approximate word timings for synchronization with punctuation-aware pausing
+    // Split text into sentences first to account for natural pauses after sentences
+    const sentences = text.split(/([.!?]+\s+)/);
+    const wordTimings = [];
+    let currentTime = 0.05; // 50ms initial delay
+
+    // Pause durations (in seconds) - TTS engines add natural pauses
+    const PAUSE_AFTER_SENTENCE = 0.4; // 400ms after period/question/exclamation
+    const PAUSE_AFTER_COMMA = 0.15; // 150ms after comma
+    const WORDS_PER_MINUTE = 130; // Multilingual TTS speaking rate
+    const SECONDS_PER_WORD = 60 / WORDS_PER_MINUTE / speed;
+
+    for (const sentence of sentences) {
+      if (!sentence.trim()) continue;
+
+      // Split sentence into words and punctuation
+      const tokens = sentence.split(/(\s+)/);
+
+      for (const token of tokens) {
+        if (!token.trim()) continue; // Skip whitespace
+
+        // Check if token is punctuation only
+        if (/^[.!?,;:]+$/.test(token)) {
+          // Add pause for sentence-ending punctuation
+          if (/[.!?]/.test(token)) {
+            currentTime += PAUSE_AFTER_SENTENCE;
+          } else if (/,/.test(token)) {
+            currentTime += PAUSE_AFTER_COMMA;
+          }
+          continue;
+        }
+
+        // Clean word (remove attached punctuation for timing)
+        const cleanWord = token.replace(/[.!?,;:]+$/, '');
+        if (!cleanWord) continue;
+
+        // Calculate word duration (longer words take slightly more time)
+        const wordLength = cleanWord.length;
+        const wordDuration = SECONDS_PER_WORD * (0.8 + (wordLength / 30)); // Adjust for word length
+
+        wordTimings.push({
+          word: token, // Keep original token with punctuation
+          startTime: currentTime,
+          endTime: currentTime + wordDuration,
+        });
+
+        currentTime += wordDuration;
+      }
+    }
+
+    // Calculate total estimated duration
+    const estimatedDuration = currentTime;
+    const wordCount = wordTimings.length;
+
+    console.log(`[${new Date().toISOString()}] TTS audio generated: ${buffer.length} bytes, ${wordCount} words, ~${estimatedDuration.toFixed(1)}s duration`);
+
+    // Return audio as base64-encoded data URL
+    const audioBase64 = buffer.toString('base64');
+    const audioDataUrl = `data:audio/mp3;base64,${audioBase64}`;
+
+    res.json({
+      success: true,
+      data: {
+        audioUrl: audioDataUrl,
+        duration: estimatedDuration,
+        wordTimings: wordTimings,
+        wordCount: wordCount,
+      },
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    console.error('[ERROR] TTS generation failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate audio',
+      message: error.message,
+    });
+  }
+});
+
 // Export for testing
 module.exports = app;
 
@@ -446,6 +565,7 @@ if (require.main === module) {
     console.log(`   Azure OpenAI: ${process.env.AZURE_OPENAI_ENDPOINT ? '✓ Configured' : '✗ Not configured'}`);
     console.log('\n📡 API Endpoints:');
     console.log(`   GET  http://localhost:${PORT}/api/health`);
+    console.log(`   POST http://localhost:${PORT}/api/generate-audio`);
     console.log('\n🔒 API keys are securely stored in backend/.env');
     console.log('   Never exposed to frontend!\n');
   });

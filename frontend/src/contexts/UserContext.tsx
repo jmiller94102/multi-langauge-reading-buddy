@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import type { UserState, UserSettings } from '../types/user';
 import type { UserInventory } from '../types/shop';
 
+export interface LevelUpCelebration {
+  newLevel: number;
+  xpEarned: number;
+}
+
 export interface UserContextValue {
   user: UserState;
   inventory: UserInventory;
@@ -18,6 +23,10 @@ export interface UserContextValue {
   addToInventory: (itemId: string, category: 'foods' | 'cosmetics' | 'powerUps', quantity?: number) => Promise<void>;
   removeFromInventory: (itemId: string, category: 'foods' | 'cosmetics' | 'powerUps', quantity?: number) => Promise<void>;
   isLoading: boolean;
+  levelUpCelebration: LevelUpCelebration | null;
+  clearLevelUpCelebration: () => void;
+  getDailyXPGain: () => number;
+  getDailyLevelGain: () => number;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -44,6 +53,8 @@ const createDefaultUser = (): UserState => ({
     averageQuizScore: 0,
     longestStreak: 0,
   },
+  xpHistory: [],
+  levelHistory: [{ level: 1, timestamp: Date.now() }],
   settings: {
     primaryLanguage: 'en',
     secondaryLanguage: 'ko',
@@ -77,6 +88,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserState>(createDefaultUser);
   const [inventory, setInventory] = useState<UserInventory>(createDefaultInventory);
   const [isLoading, setIsLoading] = useState(true);
+  const [levelUpCelebration, setLevelUpCelebration] = useState<LevelUpCelebration | null>(null);
 
   // Load user from backend or localStorage
   useEffect(() => {
@@ -178,20 +190,38 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let newXP = user.xp + amount;
     let newLevel = user.level;
     let newXPToNextLevel = user.xpToNextLevel;
+    const oldLevel = user.level;
+    const now = Date.now();
+
+    // Track XP gain (initialize arrays if they don't exist)
+    const newXPHistory = [...(user.xpHistory || []), { amount, timestamp: now }];
 
     // Level up logic
+    const levelUps: Array<{ level: number; timestamp: number }> = [];
     while (newXP >= newXPToNextLevel) {
       newXP -= newXPToNextLevel;
       newLevel++;
       newXPToNextLevel = calculateXPToNextLevel(newLevel);
+      levelUps.push({ level: newLevel, timestamp: now });
     }
 
+    // Update user state
     await persistUser({
       ...user,
       xp: newXP,
       level: newLevel,
       xpToNextLevel: newXPToNextLevel,
+      xpHistory: newXPHistory,
+      levelHistory: levelUps.length > 0 ? [...(user.levelHistory || []), ...levelUps] : (user.levelHistory || []),
     });
+
+    // Trigger level-up celebration if leveled up
+    if (newLevel > oldLevel) {
+      setLevelUpCelebration({
+        newLevel,
+        xpEarned: amount,
+      });
+    }
   }, [user, persistUser]);
 
   const addCoins = useCallback(async (amount: number) => {
@@ -338,6 +368,29 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await persistInventory(updatedInventory);
   }, [inventory, persistInventory]);
 
+  const clearLevelUpCelebration = useCallback(() => {
+    setLevelUpCelebration(null);
+  }, []);
+
+  // Calculate daily XP gains
+  const getDailyXPGain = useCallback((): number => {
+    const now = Date.now();
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+
+    return (user.xpHistory || [])
+      .filter(entry => entry.timestamp >= oneDayAgo)
+      .reduce((total, entry) => total + entry.amount, 0);
+  }, [user.xpHistory]);
+
+  // Calculate daily level gains
+  const getDailyLevelGain = useCallback((): number => {
+    const now = Date.now();
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+
+    const levelsToday = (user.levelHistory || []).filter(entry => entry.timestamp >= oneDayAgo);
+    return levelsToday.length;
+  }, [user.levelHistory]);
+
   const value: UserContextValue = {
     user,
     inventory,
@@ -354,6 +407,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addToInventory,
     removeFromInventory,
     isLoading,
+    levelUpCelebration,
+    clearLevelUpCelebration,
+    getDailyXPGain,
+    getDailyLevelGain,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

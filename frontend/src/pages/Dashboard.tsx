@@ -8,6 +8,8 @@ import { StreakBonus } from '@/components/dashboard/StreakBonus';
 import { VirtualPetWidget } from '@/components/dashboard/VirtualPetWidget';
 import { EvolutionAnimation } from '@/components/pet/EvolutionAnimation';
 import { EvolutionModal } from '@/components/pet/EvolutionModal';
+import { QuestCompletionAnimation } from '@/components/animations/QuestCompletionAnimation';
+import { PetInteractionAnimation, type PetInteractionType } from '@/components/animations/PetInteractionAnimation';
 import { usePetEvolution } from '@/hooks/usePetEvolution';
 import { useUser } from '@/contexts/UserContext';
 import { usePet } from '@/contexts/PetContext';
@@ -16,6 +18,7 @@ import { useAchievements } from '@/contexts/AchievementContext';
 import { getFoodById } from '@/data/foods';
 import { getFoodReaction } from '@/data/petEvolution';
 import type { PetEmotion } from '@/types/pet';
+import type { Quest } from '@/types/quest';
 
 export const Dashboard: React.FC = () => {
   // Context integration
@@ -23,6 +26,10 @@ export const Dashboard: React.FC = () => {
   const { pet, feedPet: contextFeedPet, playWithPet, boostPet } = usePet();
   const { dailyQuests, weeklyQuests, claimQuest } = useQuests();
   const { achievements } = useAchievements();
+
+  // Animation states
+  const [completedQuest, setCompletedQuest] = useState<Quest | null>(null);
+  const [petInteraction, setPetInteraction] = useState<PetInteractionType | null>(null);
 
   const totalAchievements = achievements.length;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -60,17 +67,23 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleClaimQuest = async (questId: string) => {
+    // Find the quest being claimed
+    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    if (!quest) return;
+
     // Claim quest and get rewards
     const rewards = await claimQuest(questId);
 
     if (rewards) {
+      // Show quest completion animation
+      setCompletedQuest(quest);
+
       // Apply rewards to user
       await addXP(rewards.xp);
       await addCoins(rewards.coins);
       if (rewards.gems > 0) {
         await addGems(rewards.gems);
       }
-      // TODO: Show celebration animation
     }
   };
 
@@ -93,6 +106,9 @@ export const Dashboard: React.FC = () => {
     // Feed pet using context
     await contextFeedPet(foodId);
 
+    // Show feeding animation
+    setPetInteraction('feed');
+
     // Apply track-specific bonuses if this is a favorite food
     if (effect.bonusType && effect.bonusAmount) {
       if (effect.bonusType === 'xp') {
@@ -102,15 +118,12 @@ export const Dashboard: React.FC = () => {
       }
       // languageBonus would be applied during quiz completion
     }
-
-    // TODO: Add feeding animation
-    // TODO: Show bonus notification if favorite food
   };
 
   const handlePlay = async () => {
     if (pet.energy >= 20) {
       await playWithPet();
-      // TODO: Add play animation
+      setPetInteraction('play');
     }
   };
 
@@ -119,7 +132,7 @@ export const Dashboard: React.FC = () => {
       const success = await spendGems(1);
       if (success) {
         await boostPet();
-        // TODO: Add boost animation
+        setPetInteraction('boost');
       }
     }
   };
@@ -250,6 +263,25 @@ export const Dashboard: React.FC = () => {
           track={pet.evolutionTrack}
           newStage={newStage}
           onClose={handleModalClose}
+        />
+      )}
+
+      {/* Quest Completion Animation */}
+      {completedQuest && (
+        <QuestCompletionAnimation
+          questTitle={completedQuest.title}
+          xpReward={completedQuest.rewards.xp}
+          coinReward={completedQuest.rewards.coins}
+          gemReward={completedQuest.rewards.gems}
+          onComplete={() => setCompletedQuest(null)}
+        />
+      )}
+
+      {/* Pet Interaction Animation */}
+      {petInteraction && (
+        <PetInteractionAnimation
+          type={petInteraction}
+          onComplete={() => setPetInteraction(null)}
         />
       )}
       </div>

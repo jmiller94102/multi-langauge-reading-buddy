@@ -22,6 +22,13 @@ export const NAV_ITEMS: NavItem[] = [
     ariaLabel: 'Go to Reading page',
   },
   {
+    id: 'library',
+    label: 'Library',
+    icon: '📚',
+    path: '/library',
+    ariaLabel: 'Go to Story Library page',
+  },
+  {
     id: 'achievements',
     label: 'Achievements',
     icon: '🏆',

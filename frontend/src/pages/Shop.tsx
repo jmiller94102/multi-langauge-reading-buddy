@@ -154,7 +154,7 @@ export const Shop: React.FC = () => {
               <h2 className="text-child-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <span>🇰🇷</span>Korean Cuisine
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {koreanFoods.map(food => (
                   <FoodCard key={food.id} food={food} onPurchase={() => handlePurchase(food)} canAfford={user.coins >= food.price} />
                 ))}
@@ -166,7 +166,7 @@ export const Shop: React.FC = () => {
               <h2 className="text-child-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <span>🇨🇳</span>Chinese Cuisine
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {chineseFoods.map(food => (
                   <FoodCard key={food.id} food={food} onPurchase={() => handlePurchase(food)} canAfford={user.coins >= food.price} />
                 ))}
@@ -180,7 +180,7 @@ export const Shop: React.FC = () => {
           <div className="space-y-4">
             <section className="card">
               <h2 className="text-child-lg font-bold text-gray-900 mb-3">🎓 Knowledge Track</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {knowledgeCosmetics.map(cosmetic => (
                   <CosmeticCard key={cosmetic.id} cosmetic={cosmetic} userLevel={user.level} userCoins={user.coins} userGems={user.gems} onPurchase={() => handlePurchase(cosmetic)} />
                 ))}
@@ -189,7 +189,7 @@ export const Shop: React.FC = () => {
 
             <section className="card">
               <h2 className="text-child-lg font-bold text-gray-900 mb-3">😎 Coolness Track</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {coolnessCosmetics.map(cosmetic => (
                   <CosmeticCard key={cosmetic.id} cosmetic={cosmetic} userLevel={user.level} userCoins={user.coins} userGems={user.gems} onPurchase={() => handlePurchase(cosmetic)} />
                 ))}
@@ -198,7 +198,7 @@ export const Shop: React.FC = () => {
 
             <section className="card">
               <h2 className="text-child-lg font-bold text-gray-900 mb-3">🪭 Culture Track</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {cultureCosmetics.map(cosmetic => (
                   <CosmeticCard key={cosmetic.id} cosmetic={cosmetic} userLevel={user.level} userCoins={user.coins} userGems={user.gems} onPurchase={() => handlePurchase(cosmetic)} />
                 ))}
@@ -257,20 +257,20 @@ export const Shop: React.FC = () => {
 
 // Food Card Component
 const FoodCard: React.FC<{ food: Food; onPurchase: () => void; canAfford: boolean }> = ({ food, onPurchase, canAfford }) => (
-  <div className="card-hover space-y-2">
+  <div className="card-hover space-y-1">
     <div className="flex justify-center">
-      <span className="text-5xl">{food.emoji}</span>
+      <span className="text-3xl">{food.emoji}</span>
     </div>
-    <h3 className="text-child-sm font-bold text-gray-900 text-center">{food.name}</h3>
-    <p className="text-child-xs text-gray-600 text-center line-clamp-2">{food.description}</p>
-    <div className="space-y-1 text-child-xs text-gray-700">
-      <p>❤️ +{food.happinessBoost} Happiness</p>
-      <p>⚡ -{food.hungerReduction} Hunger</p>
+    <h3 className="text-[13px] font-bold text-gray-900 text-center leading-tight">{food.name}</h3>
+    <p className="text-[10px] text-gray-600 text-center line-clamp-2 leading-tight">{food.description}</p>
+    <div className="space-y-0.5 text-[9px] text-gray-700">
+      <p>❤️ +{food.happinessBoost}</p>
+      <p>⚡ -{food.hungerReduction}</p>
     </div>
-    <div className="border-t border-gray-200 pt-2">
-      <p className="text-child-sm font-bold text-amber-600 mb-2">🪙 {food.price}</p>
-      <button onClick={onPurchase} disabled={!canAfford} className={`w-full py-2 px-4 rounded-lg font-semibold text-child-xs transition-colors ${canAfford ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-        {canAfford ? 'Purchase' : 'Not Enough Coins'}
+    <div className="border-t border-gray-200 pt-1">
+      <p className="text-[11px] font-bold text-amber-600 mb-1">🪙 {food.price}</p>
+      <button onClick={onPurchase} disabled={!canAfford} className={`w-full py-1.5 px-3 rounded-lg font-semibold text-[10px] transition-colors ${canAfford ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
+        {canAfford ? 'Purchase' : 'Not Enough'}
       </button>
     </div>
   </div>
@@ -283,21 +283,21 @@ const CosmeticCard: React.FC<{ cosmetic: Cosmetic; userLevel: number; userCoins:
   const canPurchase = !isLocked && canAfford;
 
   return (
-    <div className={`card-hover space-y-2 ${isLocked ? 'opacity-60 grayscale' : ''}`}>
+    <div className={`card-hover space-y-1 ${isLocked ? 'opacity-60 grayscale' : ''}`}>
       <div className="flex justify-center">
-        <span className="text-5xl">{cosmetic.icon}</span>
+        <span className="text-3xl">{cosmetic.icon}</span>
       </div>
-      <h3 className="text-child-sm font-bold text-gray-900 text-center">{cosmetic.name}</h3>
-      <p className="text-child-xs text-gray-600 text-center line-clamp-2">{cosmetic.description}</p>
+      <h3 className="text-[13px] font-bold text-gray-900 text-center leading-tight">{cosmetic.name}</h3>
+      <p className="text-[10px] text-gray-600 text-center line-clamp-2 leading-tight">{cosmetic.description}</p>
       {isLocked && (
-        <p className="text-child-xs text-red-600 font-semibold text-center">🔒 Level {cosmetic.levelRequirement} Required</p>
+        <p className="text-[9px] text-red-600 font-semibold text-center">🔒 Lvl {cosmetic.levelRequirement}</p>
       )}
-      <div className="border-t border-gray-200 pt-2">
-        <p className="text-child-sm font-bold mb-2">
+      <div className="border-t border-gray-200 pt-1">
+        <p className="text-[11px] font-bold mb-1">
           {cosmetic.gemPrice ? `💎 ${cosmetic.gemPrice}` : `🪙 ${cosmetic.price}`}
         </p>
-        <button onClick={onPurchase} disabled={!canPurchase} className={`w-full py-2 px-4 rounded-lg font-semibold text-child-xs transition-colors ${canPurchase ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-          {isLocked ? 'Locked' : canAfford ? 'Purchase' : 'Cannot Afford'}
+        <button onClick={onPurchase} disabled={!canPurchase} className={`w-full py-1.5 px-3 rounded-lg font-semibold text-[10px] transition-colors ${canPurchase ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
+          {isLocked ? 'Locked' : canAfford ? 'Buy' : 'Not Enough'}
         </button>
       </div>
     </div>
@@ -309,22 +309,22 @@ const PowerUpCard: React.FC<{ powerup: PowerUp; userCoins: number; userGems: num
   const canAfford = powerup.gemPrice ? userGems >= powerup.gemPrice : userCoins >= powerup.price;
 
   return (
-    <div className="card-hover space-y-2">
+    <div className="card-hover space-y-1">
       <div className="flex justify-center">
-        <span className="text-5xl">{powerup.icon}</span>
+        <span className="text-3xl">{powerup.icon}</span>
       </div>
-      <h3 className="text-child-sm font-bold text-gray-900 text-center">{powerup.name}</h3>
-      <p className="text-child-xs text-gray-600 text-center">{powerup.description}</p>
-      <div className="space-y-1 text-child-xs text-gray-700">
+      <h3 className="text-[13px] font-bold text-gray-900 text-center leading-tight">{powerup.name}</h3>
+      <p className="text-[10px] text-gray-600 text-center leading-tight">{powerup.description}</p>
+      <div className="space-y-0.5 text-[9px] text-gray-700">
         <p>⚡ {powerup.effect}</p>
-        {powerup.duration && <p>⏱️ {powerup.duration} minutes</p>}
+        {powerup.duration && <p>⏱️ {powerup.duration} min</p>}
       </div>
-      <div className="border-t border-gray-200 pt-2">
-        <p className="text-child-sm font-bold mb-2">
+      <div className="border-t border-gray-200 pt-1">
+        <p className="text-[11px] font-bold mb-1">
           {powerup.gemPrice ? `💎 ${powerup.gemPrice}` : `🪙 ${powerup.price}`}
         </p>
-        <button onClick={onPurchase} disabled={!canAfford} className={`w-full py-2 px-4 rounded-lg font-semibold text-child-xs transition-colors ${canAfford ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-          {canAfford ? 'Purchase' : 'Cannot Afford'}
+        <button onClick={onPurchase} disabled={!canAfford} className={`w-full py-1.5 px-3 rounded-lg font-semibold text-[10px] transition-colors ${canAfford ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
+          {canAfford ? 'Buy' : 'Not Enough'}
         </button>
       </div>
     </div>

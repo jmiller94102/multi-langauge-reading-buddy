@@ -4,6 +4,8 @@ import { PetProvider } from './PetContext';
 import { QuestProvider } from './QuestContext';
 import { AchievementProvider } from './AchievementContext';
 import { SettingsProvider } from './SettingsContext';
+import { ToastProvider } from './ToastContext';
+import { StoryProvider } from './StoryContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -11,16 +13,20 @@ interface AppProvidersProps {
 
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
-    <SettingsProvider>
-      <UserProvider>
-        <PetProvider>
-          <QuestProvider>
-            <AchievementProvider>
-              {children}
-            </AchievementProvider>
-          </QuestProvider>
-        </PetProvider>
-      </UserProvider>
-    </SettingsProvider>
+    <ToastProvider>
+      <SettingsProvider>
+        <UserProvider>
+          <PetProvider>
+            <QuestProvider>
+              <AchievementProvider>
+                <StoryProvider>
+                  {children}
+                </StoryProvider>
+              </AchievementProvider>
+            </QuestProvider>
+          </PetProvider>
+        </UserProvider>
+      </SettingsProvider>
+    </ToastProvider>
   );
 };

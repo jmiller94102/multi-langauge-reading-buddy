@@ -8,6 +8,85 @@ interface QuizComponentProps {
   onComplete: (result: QuizResult) => void;
 }
 
+/**
+ * Fuzzy matching for fill-in-blank answers
+ * Handles: misspellings, extra words, different conjugations, case insensitivity
+ */
+function isSimilarAnswer(userAnswer: string, correctAnswer: string): boolean {
+  // Normalize both answers
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .trim()
+      .replace(/[.,!?;:'"()]/g, '') // Remove punctuation
+      .replace(/\s+/g, ' '); // Normalize whitespace
+
+  const normalizedUser = normalize(userAnswer);
+  const normalizedCorrect = normalize(correctAnswer);
+
+  // Exact match after normalization
+  if (normalizedUser === normalizedCorrect) return true;
+
+  // Check if user answer contains the correct answer (allows extra adjectives/adverbs)
+  const userWords = normalizedUser.split(' ');
+  const correctWords = normalizedCorrect.split(' ');
+
+  // If correct answer is single word
+  if (correctWords.length === 1) {
+    const correctWord = correctWords[0];
+    // Check if user answer contains the correct word
+    if (userWords.some(w => w === correctWord)) return true;
+
+    // Levenshtein distance for misspellings (allow 1-2 character difference)
+    const distance = levenshteinDistance(normalizedUser, correctWord);
+    const threshold = correctWord.length > 5 ? 2 : 1;
+    if (distance <= threshold) return true;
+  } else {
+    // For multi-word answers, check if all correct words appear in user answer
+    const allWordsPresent = correctWords.every(correctWord =>
+      userWords.some(userWord => {
+        if (userWord === correctWord) return true;
+        const dist = levenshteinDistance(userWord, correctWord);
+        return dist <= 1; // Allow 1 character difference per word
+      })
+    );
+    if (allWordsPresent) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[str2.length][str1.length];
+}
+
 export const QuizComponent: React.FC<QuizComponentProps> = ({ quiz, onComplete }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
@@ -42,7 +121,17 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({ quiz, onComplete }
   const handleSubmit = () => {
     if (!selectedAnswer) return;
 
-    const correct = selectedAnswer === currentQuestion.correctAnswer;
+    // Determine if answer is correct based on question type
+    let correct = false;
+    if (currentQuestion.type === 'multipleChoice' && currentQuestion.options) {
+      // For multiple choice, check if selected option has isCorrect=true
+      const selectedOption = currentQuestion.options.find(opt => opt.text === selectedAnswer);
+      correct = selectedOption?.isCorrect || false;
+    } else {
+      // For fill-in-blank, use fuzzy matching
+      correct = isSimilarAnswer(selectedAnswer, currentQuestion.correctAnswer);
+    }
+
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
 
     const userAnswer: UserAnswer = {
