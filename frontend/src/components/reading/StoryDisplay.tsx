@@ -10,6 +10,8 @@ import { useStory } from '@/contexts/StoryContext';
 interface StoryDisplayProps {
   story: Story;
   onFinish: () => void;
+  onGenerateNew?: () => void; // Navigate to prompt/generation screen
+  onSaveStory?: () => void; // Save current story to library
   currentBlendLevel?: number; // Real-time blend level (0-4: 5-level system)
   showHints?: boolean; // Real-time hint toggle
   showRomanization?: boolean; // Real-time romanization toggle
@@ -18,6 +20,8 @@ interface StoryDisplayProps {
 export const StoryDisplay: React.FC<StoryDisplayProps> = ({
   story,
   onFinish,
+  onGenerateNew,
+  onSaveStory,
   currentBlendLevel = 2,
   showHints = true,
   showRomanization = true,
@@ -216,15 +220,47 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Story Header */}
+      {/* Story Header with Action Buttons */}
       <div className="card py-3 px-4 space-y-3">
         <div className="border-b-2 border-gray-200 pb-2">
-          <h2 className="text-child-lg font-bold text-gray-900 mb-1">
-            📖 {story.title}
-          </h2>
-          <p className="text-[11px] text-gray-600">
-            {story.wordCount} words • {story.settings.gradeLevel} Grade • Level {currentBlendLevel} ({story.languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})
-          </p>
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex-1">
+              <h2 className="text-child-lg font-bold text-gray-900 mb-1">
+                📖 {story.title}
+              </h2>
+              <p className="text-[11px] text-gray-600">
+                {story.wordCount} words • {story.settings.gradeLevel} Grade • Level {currentBlendLevel} ({story.languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {onSaveStory && (
+                <Button
+                  variant="outline"
+                  size="small"
+                  onClick={onSaveStory}
+                  className="flex items-center gap-1"
+                  aria-label="Save story to library"
+                >
+                  <span className="text-base" aria-hidden="true">💾</span>
+                  <span className="text-[11px] font-semibold">Save Story</span>
+                </Button>
+              )}
+              {onGenerateNew && (
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={onGenerateNew}
+                  className="flex items-center gap-1"
+                  aria-label="Generate new story"
+                >
+                  <span className="text-base" aria-hidden="true">✨</span>
+                  <span className="text-[11px] font-semibold">New Story</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Audio Controls */}

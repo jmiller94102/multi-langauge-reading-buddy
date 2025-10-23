@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import type { SidebarTab as SidebarTabType } from '@/components/layout/CollapsibleSidebar';
@@ -20,7 +20,7 @@ import { useAchievements } from '@/contexts/AchievementContext';
 import { useStory } from '@/contexts/StoryContext';
 import { calculateXPMultiplier, calculateCoinBonus } from '@/data/petEvolution';
 import { NAV_ITEMS } from '@/types/navigation';
-import { storyLibrary } from '@/services/storyLibraryService';
+import { storyLibrary, type SavedStory } from '@/services/storyLibraryService';
 import { useToast } from '@/contexts/ToastContext';
 
 type ReadingState = 'input' | 'generating' | 'reading' | 'quiz' | 'complete';
@@ -46,6 +46,44 @@ export const Reading: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
+  // Library state
+  const [savedStories, setSavedStories] = useState<SavedStory[]>([]);
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'ko' | 'zh'>('all');
+
+  // Load saved stories on mount
+  useEffect(() => {
+    loadSavedStories();
+  }, [libraryFilter]);
+
+  const loadSavedStories = async () => {
+    try {
+      const stories = libraryFilter === 'all'
+        ? await storyLibrary.getAllStories()
+        : await storyLibrary.getStoriesByLanguage(libraryFilter);
+      setSavedStories(stories);
+    } catch (error) {
+      console.error('Failed to load stories:', error);
+    }
+  };
+
+  const handleLoadSavedStory = (savedStory: SavedStory) => {
+    setStory(savedStory.story);
+    setQuiz(savedStory.quiz);
+    setCurrentState('reading');
+    showToast(`Loaded: ${savedStory.title}`, 'success');
+  };
+
+  const handleDeleteStory = async (id: string) => {
+    try {
+      await storyLibrary.deleteStory(id);
+      showToast('Story deleted', 'success');
+      loadSavedStories();
+    } catch (error) {
+      console.error('Failed to delete story:', error);
+      showToast('Failed to delete story', 'error');
+    }
+  };
+
   // Create custom sidebar tabs for Reading page
   const settingsTabContent = (
     <div className="space-y-1.5">
@@ -54,9 +92,71 @@ export const Reading: React.FC = () => {
     </div>
   );
 
+  const libraryTabContent = (
+    <div className="space-y-2">
+      {/* Filter Buttons */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => setLibraryFilter('all')}
+          className={`flex-1 py-1 px-2 rounded text-[10px] font-semibold ${
+            libraryFilter === 'all' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700'
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setLibraryFilter('ko')}
+          className={`flex-1 py-1 px-2 rounded text-[10px] font-semibold ${
+            libraryFilter === 'ko' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700'
+          }`}
+        >
+          🇰🇷
+        </button>
+        <button
+          onClick={() => setLibraryFilter('zh')}
+          className={`flex-1 py-1 px-2 rounded text-[10px] font-semibold ${
+            libraryFilter === 'zh' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700'
+          }`}
+        >
+          🇨🇳
+        </button>
+      </div>
+
+      {/* Saved Stories List */}
+      <div className="space-y-1 max-h-96 overflow-y-auto">
+        {savedStories.length === 0 ? (
+          <p className="text-[11px] text-gray-600 text-center py-4">No saved stories yet</p>
+        ) : (
+          savedStories.map((savedStory) => (
+            <div key={savedStory.id} className="bg-white rounded border border-gray-200 p-2 space-y-1">
+              <p className="text-[11px] font-bold text-gray-900 truncate">{savedStory.title}</p>
+              <p className="text-[10px] text-gray-600">
+                {savedStory.language === 'ko' ? '🇰🇷' : '🇨🇳'} {savedStory.story.wordCount} words
+              </p>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleLoadSavedStory(savedStory)}
+                  className="flex-1 bg-primary-500 text-white text-[10px] font-semibold py-1 px-2 rounded hover:bg-primary-600"
+                >
+                  Load
+                </button>
+                <button
+                  onClick={() => handleDeleteStory(savedStory.id)}
+                  className="bg-gray-200 text-gray-700 text-[10px] font-semibold py-1 px-2 rounded hover:bg-red-100"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
   const pagesTabContent = (
     <div className="space-y-1">
-      {NAV_ITEMS.map((item) => {
+      {NAV_ITEMS.filter(item => item.id !== 'library').map((item) => {
         const isActive = location.pathname === item.path;
         return (
           <button
@@ -86,6 +186,12 @@ export const Reading: React.FC = () => {
       label: 'Reading',
       icon: '📖',
       content: settingsTabContent,
+    },
+    {
+      id: 'library',
+      label: 'Library',
+      icon: '📚',
+      content: libraryTabContent,
     },
     {
       id: 'pages',
@@ -230,50 +336,131 @@ export const Reading: React.FC = () => {
       <div className="space-y-3">
         {/* State 1: Story Generation Input */}
         {currentState === 'input' && (
-          <>
-            <div className="grid grid-cols-1 gap-3">
-              {/* Prompt Input Section (Full Width when sidebar open) */}
-              <div className="space-y-3">
-                <StoryPromptInput
-                  prompt={storySettings.prompt}
-                  storySettings={storySettings}
-                  languageSettings={languageSettings}
-                  onPromptChange={handlePromptChange}
-                  onGenerate={handleGenerate}
-                  isGenerating={false}
-                />
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Prompt Input Section (70%) */}
+            <div className="lg:col-span-8 space-y-3">
+              <StoryPromptInput
+                prompt={storySettings.prompt}
+                storySettings={storySettings}
+                languageSettings={languageSettings}
+                onPromptChange={handlePromptChange}
+                onGenerate={handleGenerate}
+                isGenerating={false}
+              />
+
+              {error && (
+                <div className="card py-3 px-4 bg-red-50 border-2 border-red-300">
+                  <p className="text-child-sm font-bold text-red-700">⚠️ Error</p>
+                  <p className="text-child-xs text-red-600">{error}</p>
+                </div>
+              )}
             </div>
 
-            {error && (
-              <div className="card py-3 px-4 bg-red-50 border-2 border-red-300">
-                <p className="text-child-sm font-bold text-red-700">⚠️ Error</p>
-                <p className="text-child-xs text-red-600">{error}</p>
+            {/* Right Panel: Pet & Tips (30%) */}
+            <div className="lg:col-span-4 space-y-3">
+              {/* Mini Pet Widget */}
+              <div className="card py-3 px-4 text-center space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">🐾 Learning Buddy</h3>
+                <div className="text-6xl animate-bounce-slow">😊</div>
+                <p className="text-child-xs font-bold text-gray-900">{pet.name}</p>
+                <div className="bg-blue-100 border border-blue-300 rounded-lg py-2 px-3">
+                  <p className="text-[11px] text-blue-700 font-semibold">
+                    💬 "What story should we read today?"
+                  </p>
+                </div>
               </div>
-            )}
-          </>
+
+              {/* Story Generation Tips */}
+              <div className="card py-3 px-4 space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">💡 Story Ideas</h3>
+                <p className="text-child-xs text-gray-700">
+                  Try describing an exciting adventure, a funny situation, or your favorite characters!
+                </p>
+                <p className="text-child-xs text-gray-700">
+                  Use the microphone 🎤 to speak your story idea instead of typing.
+                </p>
+              </div>
+
+              {/* Language Settings Info */}
+              <div className="card py-3 px-4 space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">🌍 Current Settings</h3>
+                <div className="space-y-1 text-child-xs text-gray-700">
+                  <p>
+                    Language: {languageSettings.secondaryLanguage === 'ko' ? '🇰🇷 Korean' : '🇨🇳 Mandarin'}
+                  </p>
+                  <p>Blend Level: {languageSettings.blendLevel}</p>
+                  <p>Grade: {storySettings.gradeLevel}</p>
+                  <p className="text-[10px] text-gray-500 italic mt-1">
+                    Change settings in the Reading tab →
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* State 2: Generating Story */}
         {currentState === 'generating' && (
-          <div className="card py-12 px-8 text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="animate-spin text-6xl">⏳</div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Generating Animation (70%) */}
+            <div className="lg:col-span-8">
+              <div className="card py-12 px-8 text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="animate-spin text-6xl">⏳</div>
+                </div>
+                <h2 className="text-child-lg font-bold text-gray-900">
+                  ✨ Generating Your Story
+                </h2>
+                <p className="text-child-base text-gray-700">
+                  Creating a {storySettings.gradeLevel} grade story at Level {languageSettings.blendLevel}{' '}
+                  ({languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})
+                </p>
+                <p className="text-child-sm text-gray-600">
+                  This may take 10-15 seconds...
+                </p>
+                <div className="text-7xl animate-bounce-slow">😊</div>
+                <p className="text-child-xs text-gray-500 italic">
+                  Your learning buddy is excited!
+                </p>
+              </div>
             </div>
-            <h2 className="text-child-lg font-bold text-gray-900">
-              ✨ Generating Your Story
-            </h2>
-            <p className="text-child-base text-gray-700">
-              Creating a {storySettings.gradeLevel} grade story at Level {languageSettings.blendLevel}{' '}
-              ({languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'})
-            </p>
-            <p className="text-child-sm text-gray-600">
-              This may take 10-15 seconds...
-            </p>
-            <div className="text-7xl animate-bounce-slow">😊</div>
-            <p className="text-child-xs text-gray-500 italic">
-              Your learning buddy is excited!
-            </p>
+
+            {/* Right Panel: Pet & Info (30%) */}
+            <div className="lg:col-span-4 space-y-3">
+              {/* Mini Pet Widget */}
+              <div className="card py-3 px-4 text-center space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">🐾 Learning Buddy</h3>
+                <div className="text-6xl animate-bounce-slow">😊</div>
+                <p className="text-child-xs font-bold text-gray-900">{pet.name}</p>
+                <div className="bg-purple-100 border border-purple-300 rounded-lg py-2 px-3">
+                  <p className="text-[11px] text-purple-700 font-semibold">
+                    💬 "This is going to be an amazing story!"
+                  </p>
+                </div>
+              </div>
+
+              {/* What's Happening */}
+              <div className="card py-3 px-4 space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">🎨 Creating Your Story</h3>
+                <p className="text-child-xs text-gray-700">
+                  Our AI is writing a custom story just for you with the perfect mix of English and{' '}
+                  {languageSettings.secondaryLanguage === 'ko' ? 'Korean' : 'Mandarin'}!
+                </p>
+                <p className="text-child-xs text-gray-700">
+                  It's also preparing quiz questions to help you practice.
+                </p>
+              </div>
+
+              {/* Fun Fact */}
+              <div className="card py-3 px-4 space-y-2">
+                <h3 className="text-child-sm font-bold text-gray-900">💡 Did You Know?</h3>
+                <p className="text-child-xs text-gray-700">
+                  {languageSettings.secondaryLanguage === 'ko'
+                    ? 'Korean has 24 letters in its alphabet called Hangul, created in 1443!'
+                    : 'Mandarin Chinese uses over 50,000 characters, but you only need about 3,000 to read a newspaper!'}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -285,6 +472,8 @@ export const Reading: React.FC = () => {
               <StoryDisplay
                 story={story}
                 onFinish={handleFinishReading}
+                onGenerateNew={handleNewStory}
+                onSaveStory={handleSaveStory}
                 currentBlendLevel={languageSettings.blendLevel}
                 showHints={languageSettings.showHints}
                 showRomanization={languageSettings.showRomanization}
@@ -343,27 +532,6 @@ export const Reading: React.FC = () => {
                   Toggle romanization to practice reading{' '}
                   {languageSettings.secondaryLanguage === 'ko' ? 'Hangul' : 'Chinese characters'}.
                 </p>
-              </div>
-
-              {/* Save Story */}
-              <div className="card py-3 px-4 space-y-2">
-                <h3 className="text-child-sm font-bold text-gray-900">📚 Save Story</h3>
-                <Button
-                  variant={isSaved ? 'outline' : 'primary'}
-                  size="medium"
-                  onClick={handleSaveStory}
-                  disabled={isSaved}
-                  className="w-full"
-                  aria-label={isSaved ? 'Story saved' : 'Save story to library'}
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    <span aria-hidden="true">{isSaved ? '✓' : '💾'}</span>
-                    <span className="text-child-sm font-bold">{isSaved ? 'Saved!' : 'Save to Library'}</span>
-                  </span>
-                </Button>
-                {isSaved && (
-                  <p className="text-child-xs text-green-600 text-center">Story saved! View in Library.</p>
-                )}
               </div>
             </div>
           </div>

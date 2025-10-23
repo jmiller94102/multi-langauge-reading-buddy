@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { PetState } from '@/types/pet';
 import { Button } from '@/components/common/Button';
 import { EVOLUTION_STAGE_NAMES } from '@/data/petEvolution';
@@ -32,6 +33,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
   onEvolve,
   nextEvolutionInfo,
 }) => {
+  const navigate = useNavigate();
   const [showFoodMenu, setShowFoodMenu] = useState(false);
 
   // Determine status color based on stats
@@ -207,17 +209,17 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-2 pt-1">
+      {/* Pet Action Buttons */}
+      <div className="grid grid-cols-3 gap-1.5 pt-1">
         <Button
           variant="outline"
           size="small"
           onClick={() => setShowFoodMenu(true)}
           disabled={!canFeed}
-          className="flex-col h-auto py-2"
+          className="flex-col h-auto py-1.5"
           aria-label={`Feed ${pet.name} - Open food menu`}
         >
-          <span className="text-lg mb-0.5" aria-hidden="true">🍔</span>
+          <span className="text-base mb-0.5" aria-hidden="true">🍔</span>
           <span className="text-[10px] font-semibold">Feed</span>
           <span className="text-[9px] text-gray-500">Menu</span>
         </Button>
@@ -227,10 +229,10 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           size="small"
           onClick={onPlay}
           disabled={!canPlay}
-          className="flex-col h-auto py-2"
+          className="flex-col h-auto py-1.5"
           aria-label={`Play with ${pet.name} (requires 20 energy)`}
         >
-          <span className="text-lg mb-0.5" aria-hidden="true">🎮</span>
+          <span className="text-base mb-0.5" aria-hidden="true">🎮</span>
           <span className="text-[10px] font-semibold">Play</span>
           <span className="text-[9px] text-gray-500">-20⚡</span>
         </Button>
@@ -240,10 +242,10 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           size="small"
           onClick={onBoost}
           disabled={!canBoost}
-          className="flex-col h-auto py-2"
+          className="flex-col h-auto py-1.5"
           aria-label={`Boost ${pet.name} (costs 1 gem)`}
         >
-          <span className="text-lg mb-0.5" aria-hidden="true">✨</span>
+          <span className="text-base mb-0.5" aria-hidden="true">✨</span>
           <span className="text-[10px] font-semibold">Boost</span>
           <span className="text-[9px] text-gray-500">1💎</span>
         </Button>
@@ -254,6 +256,40 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
         {pet.hunger > 70 && "I'm hungry! 🍔"}
         {pet.energy < 30 && pet.hunger <= 70 && "I'm tired... 😴"}
         {pet.happiness > 80 && pet.hunger <= 70 && pet.energy >= 30 && "I'm so happy! 🌟"}
+      </div>
+
+      {/* Navigation Buttons - Shop/Badges/Stats */}
+      <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-gray-200">
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => navigate('/shop')}
+          className="flex-col h-auto py-1.5"
+          aria-label="Visit shop"
+        >
+          <span className="text-base mb-0.5" aria-hidden="true">🏪</span>
+          <span className="text-[10px] font-semibold">Shop</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => navigate('/achievements')}
+          className="flex-col h-auto py-1.5"
+          aria-label="View achievements and badges"
+        >
+          <span className="text-base mb-0.5" aria-hidden="true">🏆</span>
+          <span className="text-[10px] font-semibold">Badges</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => navigate('/achievements')}
+          className="flex-col h-auto py-1.5"
+          aria-label="Check progress and stats"
+        >
+          <span className="text-base mb-0.5" aria-hidden="true">📊</span>
+          <span className="text-[10px] font-semibold">Stats</span>
+        </Button>
       </div>
 
       {/* Food Menu Modal */}

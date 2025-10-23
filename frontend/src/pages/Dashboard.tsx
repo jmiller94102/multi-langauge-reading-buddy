@@ -3,7 +3,6 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { WelcomeSection } from '@/components/dashboard/WelcomeSection';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { QuestCard } from '@/components/dashboard/QuestCard';
-import { QuickActions } from '@/components/dashboard/QuickActions';
 import { StreakBonus } from '@/components/dashboard/StreakBonus';
 import { VirtualPetWidget } from '@/components/dashboard/VirtualPetWidget';
 import { EvolutionAnimation } from '@/components/pet/EvolutionAnimation';
@@ -139,7 +138,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <PageLayout>
-      <div className="space-y-3 max-w-7xl mx-auto">
+      <div className="space-y-2 max-w-7xl mx-auto">
       {/* Welcome Section - Compact */}
       <WelcomeSection user={user} />
 
@@ -151,24 +150,43 @@ export const Dashboard: React.FC = () => {
       />
 
       {/* Main Content - SYMMETRICAL 3-COLUMN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Left Column (40%) - Daily Quests (non-streak) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
+        {/* Left Column (45%) - Daily + Weekly Quests Stacked */}
         <div className="lg:col-span-5 space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-child-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span className="text-lg" aria-hidden="true">🎯</span>
-              Daily Quests
-            </h2>
-            <span className="text-[11px] text-gray-600">Resets {getDailyResetTime()}</span>
+          {/* Daily Quests */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-child-sm font-bold text-gray-900 flex items-center gap-1">
+                <span className="text-base" aria-hidden="true">🎯</span>
+                Daily Quests
+              </h2>
+              <span className="text-[10px] text-gray-600">Resets {getDailyResetTime()}</span>
+            </div>
+            <div className="grid gap-1.5">
+              {nonStreakDailyQuests.map((quest) => (
+                <QuestCard key={quest.id} quest={quest} onClaim={handleClaimQuest} />
+              ))}
+            </div>
           </div>
-          <div className="grid gap-2">
-            {nonStreakDailyQuests.map((quest) => (
-              <QuestCard key={quest.id} quest={quest} onClaim={handleClaimQuest} />
-            ))}
+
+          {/* Weekly Quests */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-child-sm font-bold text-gray-900 flex items-center gap-1">
+                <span className="text-base" aria-hidden="true">📅</span>
+                Weekly Quests
+              </h2>
+              <span className="text-[10px] text-gray-600">Resets in 5d</span>
+            </div>
+            <div className="grid gap-1.5">
+              {weeklyQuests.map((quest) => (
+                <QuestCard key={quest.id} quest={quest} onClaim={handleClaimQuest} />
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Center Column (25%) - STREAK BONUS (Tall, spans height of 2 quests) */}
+        {/* Center Column (30%) - STREAK BONUS (includes Start Reading CTA) */}
         <div className="lg:col-span-3">
           <StreakBonus
             currentStreak={user.streak}
@@ -178,9 +196,8 @@ export const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Right Column (35%) - Pet and Leaderboard */}
-        <div className="lg:col-span-4 space-y-3">
-          {/* Virtual Pet Widget */}
+        {/* Right Column (25%) - Virtual Pet Widget */}
+        <div className="lg:col-span-4">
           <VirtualPetWidget
             pet={pet}
             coins={user.coins}
@@ -191,63 +208,47 @@ export const Dashboard: React.FC = () => {
             onEvolve={checkEvolution}
             nextEvolutionInfo={nextEvolutionInfo}
           />
-
-          {/* Leaderboard - Compact */}
-          <div className="card py-3 px-4 space-y-2">
-            <h2 className="text-child-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span className="text-lg" aria-hidden="true">🏅</span>
-              Leaderboard
-            </h2>
-            <div className="space-y-1 text-child-xs">
-              <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="font-medium">👑 Sarah</span>
-                <span className="text-gray-600">5,420</span>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="font-medium">🦸 Mike</span>
-                <span className="text-gray-600">4,890</span>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="font-medium">🌟 Emma</span>
-                <span className="text-gray-600">3,765</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 bg-primary-50 -mx-4 px-4 rounded">
-                <span className="font-bold text-primary-700">🎓 {user.name} ⭐</span>
-                <span className="font-bold text-primary-700">{user.xp}</span>
-              </div>
-              <div className="flex items-center justify-between py-1">
-                <span className="font-medium">🦄 Lily</span>
-                <span className="text-gray-600">2,180</span>
-              </div>
-            </div>
-            <p className="text-[10px] text-gray-600 pt-1">
-              Rank #4 • 🎯 250 XP to #3
-            </p>
-          </div>
         </div>
       </div>
 
-      {/* Weekly Quests and Quick Actions - Full Width Below */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {/* Weekly Quests */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-child-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span className="text-lg" aria-hidden="true">📅</span>
-              Weekly Quests
-            </h2>
-            <span className="text-[11px] text-gray-600">Resets in 5d</span>
+      {/* LEADERBOARD DISABLED - Temporarily removed to avoid potential negative comparison effects on learners.
+          Peer comparison can demotivate some children, especially those who are behind others in progress.
+          We want to maintain an encouraging, growth-focused learning environment where each child
+          competes with themselves rather than with others. We may re-enable this later with opt-in
+          settings or for specific competitive contexts. */}
+      {/*
+      <div className="card py-2 px-3 space-y-1.5">
+        <h2 className="text-child-sm font-bold text-gray-900 flex items-center gap-1">
+          <span className="text-base" aria-hidden="true">🏅</span>
+          Leaderboard
+        </h2>
+        <div className="space-y-0.5 text-[11px]">
+          <div className="flex items-center justify-between py-0.5 border-b border-gray-100">
+            <span className="font-medium">👑 Sarah</span>
+            <span className="text-gray-600">5,420</span>
           </div>
-          <div className="grid gap-2">
-            {weeklyQuests.map((quest) => (
-              <QuestCard key={quest.id} quest={quest} onClaim={handleClaimQuest} />
-            ))}
+          <div className="flex items-center justify-between py-0.5 border-b border-gray-100">
+            <span className="font-medium">🦸 Mike</span>
+            <span className="text-gray-600">4,890</span>
           </div>
-        </section>
-
-        {/* Quick Actions */}
-        <QuickActions />
+          <div className="flex items-center justify-between py-0.5 border-b border-gray-100">
+            <span className="font-medium">🌟 Emma</span>
+            <span className="text-gray-600">3,765</span>
+          </div>
+          <div className="flex items-center justify-between py-1 bg-primary-50 -mx-3 px-3 rounded">
+            <span className="font-bold text-primary-700">🎓 {user.name} ⭐</span>
+            <span className="font-bold text-primary-700">{user.xp}</span>
+          </div>
+          <div className="flex items-center justify-between py-0.5">
+            <span className="font-medium">🦄 Lily</span>
+            <span className="text-gray-600">2,180</span>
+          </div>
+        </div>
+        <p className="text-[9px] text-gray-600 pt-0.5">
+          Rank #4 • 🎯 250 XP to #3
+        </p>
       </div>
+      */}
 
       {/* Pet Evolution System */}
       {showAnimation && (
