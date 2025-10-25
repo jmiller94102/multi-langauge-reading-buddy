@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
 import type { UserState } from '@/types/user';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -8,6 +9,7 @@ interface WelcomeSectionProps {
 }
 
 export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ user }) => {
+  const { t } = useTranslation();
   const { getDailyLevelGain } = useUser();
   const levelGainToday = getDailyLevelGain();
 
@@ -17,17 +19,17 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ user }) => {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-child-lg font-bold text-gray-900 flex items-center gap-2">
           <span className="text-xl">🎓</span>
-          Welcome back, {user.name}!
+          {t('welcomeSection.welcomeBack', { name: user.name })}
         </h1>
         <div className="flex items-center gap-2 bg-primary-50 px-3 py-1 rounded-lg border border-primary-200 shrink-0">
-          <span className="text-child-sm font-bold text-primary-700">Lv {user.level}</span>
+          <span className="text-child-sm font-bold text-primary-700">{t('dashboard.levelShort')} {user.level}</span>
           <span className="text-child-xs text-green-600 font-semibold">▲{levelGainToday}</span>
         </div>
       </div>
 
       {/* XP Progress Bar - Inline */}
       <div className="flex items-center gap-3">
-        <span className="text-child-xs text-gray-600 shrink-0">To Lv {user.level + 1}:</span>
+        <span className="text-child-xs text-gray-600 shrink-0">{t('welcomeSection.toLevel', { level: user.level + 1 })}</span>
         <div className="flex-1">
           <ProgressBar
             current={user.xp}
@@ -47,7 +49,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ user }) => {
       <div className="flex items-center gap-2">
         <span className="text-lg" aria-hidden="true">🔥</span>
         <span className="text-child-sm font-semibold text-orange-600">
-          {user.streak} Day Streak
+          {t('dashboard.dayStreak', { count: user.streak })}
         </span>
       </div>
     </section>

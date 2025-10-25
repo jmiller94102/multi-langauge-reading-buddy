@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
 import type { UserState } from '@/types/user';
 
@@ -13,6 +14,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
   totalAchievements,
   unlockedAchievements,
 }) => {
+  const { t } = useTranslation();
   const { getDailyXPGain } = useUser();
   const levelProgress = ((user.xp / user.xpToNextLevel) * 100).toFixed(0);
   const achievementProgress = ((unlockedAchievements / totalAchievements) * 100).toFixed(0);
@@ -24,7 +26,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
       <div className="card py-2 px-3">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="text-lg" aria-hidden="true">📚</span>
-          <span className="text-child-xs font-semibold text-gray-700">XP</span>
+          <span className="text-child-xs font-semibold text-gray-700">{t('statsGrid.xp')}</span>
         </div>
         <p className="text-child-lg font-bold text-gray-900">{user.xp.toLocaleString()}</p>
         <p className="text-[10px] text-green-600 font-medium">▲ +{xpGainedToday}</p>
@@ -34,9 +36,9 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
       <div className="card py-2 px-3">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="text-lg" aria-hidden="true">📈</span>
-          <span className="text-child-xs font-semibold text-gray-700">Level</span>
+          <span className="text-child-xs font-semibold text-gray-700">{t('statsGrid.level')}</span>
         </div>
-        <p className="text-child-lg font-bold text-gray-900">Lv {user.level}</p>
+        <p className="text-child-lg font-bold text-gray-900">{t('statsGrid.levelShort')} {user.level}</p>
         <div className="flex items-center gap-1">
           <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -56,17 +58,17 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
       <div className="card py-2 px-3">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="text-lg" aria-hidden="true">🔥</span>
-          <span className="text-child-xs font-semibold text-gray-700">Streak</span>
+          <span className="text-child-xs font-semibold text-gray-700">{t('statsGrid.streak')}</span>
         </div>
-        <p className="text-child-lg font-bold text-gray-900">{user.streak}d</p>
-        <p className="text-[10px] text-orange-600 font-medium">Best: {user.stats.longestStreak}</p>
+        <p className="text-child-lg font-bold text-gray-900">{t('statsGrid.streakDays', { count: user.streak })}</p>
+        <p className="text-[10px] text-orange-600 font-medium">{t('statsGrid.best', { count: user.stats.longestStreak })}</p>
       </div>
 
       {/* Achievements - Compact */}
       <div className="card py-2 px-3">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="text-lg" aria-hidden="true">🏆</span>
-          <span className="text-child-xs font-semibold text-gray-700">Badges</span>
+          <span className="text-child-xs font-semibold text-gray-700">{t('statsGrid.badges')}</span>
         </div>
         <p className="text-child-lg font-bold text-gray-900">
           {unlockedAchievements}/{totalAchievements}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Quest } from '@/types/quest';
 import { Button } from '@/components/common/Button';
 
@@ -8,6 +9,7 @@ interface QuestCardProps {
 }
 
 export const QuestCard: React.FC<QuestCardProps> = ({ quest, onClaim }) => {
+  const { t } = useTranslation();
   const progress = (quest.currentProgress / quest.targetProgress) * 100;
   const isComplete = quest.status === 'completed';
   const isClaimed = quest.status === 'claimed';
@@ -59,9 +61,9 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, onClaim }) => {
           size="small"
           onClick={() => onClaim(quest.id)}
           className="w-full py-1.5 text-child-xs"
-          aria-label={`Claim rewards for ${quest.title}`}
+          aria-label={t('quest.claimRewards', { title: quest.title })}
         >
-          ✨ Claim
+          ✨ {t('quest.claim')}
         </Button>
       )}
     </div>

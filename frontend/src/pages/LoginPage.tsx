@@ -45,6 +45,35 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleDevBypass = () => {
+    // Create a mock user for development
+    const mockUserId = 'dev_bypass_user';
+    const mockUserData = {
+      name: 'Dev User',
+      email: 'dev@example.com',
+      age: 10,
+      gradeLevel: '4th',
+      nativeLanguage: 'English',
+      targetLanguage: 'Korean',
+      blendLevel: 5,
+      level: 1,
+      xp: 0,
+      xpToNextLevel: 100,
+      coins: 100,
+      gems: 10,
+      streak: 0,
+      totalStoriesRead: 0,
+      totalQuizzesPassed: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Store in localStorage with dev user ID
+    localStorage.setItem(`readingApp_user_${mockUserId}`, JSON.stringify(mockUserData));
+    
+    // Navigate to dashboard
+    navigate('/dashboard');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 flex items-center justify-center p-4">
       <motion.div
@@ -114,6 +143,19 @@ export const LoginPage: React.FC = () => {
             >
               Sign Up
             </button>
+          </p>
+        </div>
+
+        {/* Development Bypass Button */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={handleDevBypass}
+            className="w-full bg-gray-600 text-white py-2 rounded-lg font-semibold hover:bg-gray-700 transition text-sm"
+          >
+            Dev Bypass (Skip Auth)
+          </button>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            For development only - bypasses authentication
           </p>
         </div>
       </motion.div>

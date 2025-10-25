@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { StorySettings as StorySettingsType, GradeLevel, HumorLevel, VisualTheme } from '@/types/story';
 
 interface StorySettingsProps {
@@ -8,6 +9,7 @@ interface StorySettingsProps {
 }
 
 export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange, collapsed = false }) => {
+  const { t } = useTranslation();
   const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...settings, length: parseInt(e.target.value, 10) });
   };
@@ -32,8 +34,8 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
   if (collapsed) {
     return (
       <div className="card py-2 px-3">
-        <h3 className="text-child-sm font-bold text-gray-900">⚙️ Settings</h3>
-        <p className="text-[11px] text-gray-600">Click to expand</p>
+        <h3 className="text-child-sm font-bold text-gray-900">⚙️ {t('reading.settings')}</h3>
+        <p className="text-[11px] text-gray-600">{t('reading.clickToExpand')}</p>
       </div>
     );
   }
@@ -43,13 +45,13 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
       {/* Story Settings Card */}
       <div className="card py-1.5 px-2 space-y-1.5">
         <h3 className="text-child-xs font-bold text-gray-900 border-b border-gray-200 pb-1">
-          📝 Story Settings
+          📝 {t('reading.storySettings')}
         </h3>
 
         {/* Length Slider */}
         <div>
           <label htmlFor="story-length" className="block text-[11px] font-semibold text-gray-700 mb-1">
-            Story Length: {settings.length} words
+            {t('reading.storyLength', { length: settings.length })}
           </label>
           <input
             id="story-length"
@@ -60,7 +62,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
             value={settings.length}
             onChange={handleLengthChange}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-500"
-            aria-label="Story length slider"
+            aria-label={t('reading.storyLengthLabel')}
             aria-valuemin={250}
             aria-valuemax={2000}
             aria-valuenow={settings.length}
@@ -75,7 +77,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
         {/* Grade Level */}
         <div>
           <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-            Grade Level:
+            {t('reading.gradeLevel')}
           </label>
           <div className="flex gap-1">
             {(['3rd', '4th', '5th', '6th'] as GradeLevel[]).map((grade) => (
@@ -87,7 +89,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
                     ? 'bg-primary-500 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                aria-label={`Select ${grade} grade level`}
+                aria-label={t('reading.selectGradeLevel', { grade })}
                 aria-pressed={settings.gradeLevel === grade}
               >
                 {grade}
@@ -99,7 +101,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
         {/* Humor Level */}
         <div>
           <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-            Humor Level:
+            {t('reading.humorLevel')}
           </label>
           <div className="flex gap-1">
             {([

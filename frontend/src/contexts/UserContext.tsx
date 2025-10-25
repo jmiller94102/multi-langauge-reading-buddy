@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { useUser as useStackUser } from '@stackframe/stack';
+// TEMPORARY: Stack Auth disabled for MVP - will re-enable post-MVP
+// import { useUser as useStackUser } from '@stackframe/stack';
 import type { UserState, UserSettings } from '../types/user';
 import type { UserInventory } from '../types/shop';
 
@@ -87,7 +88,8 @@ const createDefaultInventory = (): UserInventory => ({
 });
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const stackUser = useStackUser(); // Stack Auth user
+  // TEMPORARY: Stack Auth disabled for MVP - will re-enable post-MVP
+  const stackUser = null; // useStackUser(); // Stack Auth user
   const [user, setUser] = useState<UserState>(createDefaultUser);
   const [inventory, setInventory] = useState<UserInventory>(createDefaultInventory);
   const [isLoading, setIsLoading] = useState(true);
