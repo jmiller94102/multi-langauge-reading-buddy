@@ -15,10 +15,17 @@ export default defineConfig({
       '@/utils': path.resolve(__dirname, './src/utils'),
       '@/types': path.resolve(__dirname, './src/types'),
       '@/lib': path.resolve(__dirname, './src/lib'),
+      // Mock Next.js modules for Stack Auth compatibility
+      'next/navigation': path.resolve(__dirname, './src/lib/next-mocks.ts'),
+      'next/link': path.resolve(__dirname, './src/lib/next-mocks.ts'),
+      'next/headers': path.resolve(__dirname, './src/lib/next-mocks.ts'),
     },
   },
   server: {
     port: 5173,
     open: true, // Auto-open browser on dev
+  },
+  optimizeDeps: {
+    exclude: ['@stackframe/stack'],
   },
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { PetState } from '@/types/pet';
 import { Button } from '@/components/common/Button';
 import { EVOLUTION_STAGE_NAMES } from '@/data/petEvolution';
@@ -34,6 +35,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
   nextEvolutionInfo,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showFoodMenu, setShowFoodMenu] = useState(false);
 
   // Determine status color based on stats
@@ -67,7 +69,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
       {/* Header */}
       <h2 className="text-child-base font-bold text-gray-900 flex items-center justify-center gap-1.5">
         <span className="text-lg" aria-hidden="true">🐾</span>
-        Learning Buddy
+        {t('pet.learningBuddy')}
       </h2>
 
       {/* Pet Display */}
@@ -80,9 +82,9 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           {currentStageName} • {pet.emotion.charAt(0).toUpperCase() + pet.emotion.slice(1)}
         </p>
         <p className="text-[10px] text-purple-600 font-semibold">
-          {pet.evolutionTrack === 'knowledge' && '📚 Knowledge Track'}
-          {pet.evolutionTrack === 'coolness' && '😎 Coolness Track'}
-          {pet.evolutionTrack === 'culture' && '🌍 Culture Track'}
+          {pet.evolutionTrack === 'knowledge' && `📚 ${t('pet.tracks.knowledge')}`}
+          {pet.evolutionTrack === 'coolness' && `😎 ${t('pet.tracks.coolness')}`}
+          {pet.evolutionTrack === 'culture' && `🌍 ${t('pet.tracks.culture')}`}
         </p>
       </div>
 
@@ -91,7 +93,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
         {/* Happiness */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-semibold text-gray-700">❤️ Happiness</span>
+            <span className="text-[11px] font-semibold text-gray-700">❤️ {t('pet.stats.happiness')}</span>
             <span className="text-[11px] font-bold text-gray-900">{pet.happiness}%</span>
           </div>
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -102,7 +104,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
               aria-valuenow={pet.happiness}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Pet happiness level"
+              aria-label={t('pet.stats.happinessLevel')}
             />
           </div>
         </div>
@@ -110,7 +112,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
         {/* Hunger */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-semibold text-gray-700">🍔 Hunger</span>
+            <span className="text-[11px] font-semibold text-gray-700">🍔 {t('pet.stats.hunger')}</span>
             <span className="text-[11px] font-bold text-gray-900">{pet.hunger}%</span>
           </div>
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -121,7 +123,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
               aria-valuenow={pet.hunger}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Pet hunger level"
+              aria-label={t('pet.stats.hungerLevel')}
             />
           </div>
         </div>
@@ -129,7 +131,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
         {/* Energy */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-semibold text-gray-700">⚡ Energy</span>
+            <span className="text-[11px] font-semibold text-gray-700">⚡ {t('pet.stats.energy')}</span>
             <span className="text-[11px] font-bold text-gray-900">{pet.energy}%</span>
           </div>
           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -140,7 +142,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
               aria-valuenow={pet.energy}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Pet energy level"
+              aria-label={t('pet.stats.energyLevel')}
             />
           </div>
         </div>
@@ -150,10 +152,10 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
       <div className="border-t border-gray-200 pt-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-semibold text-purple-700">
-            🌟 Evolution Progress
+            🌟 {t('pet.evolution.progress')}
           </span>
           <span className="text-[11px] font-bold text-purple-900">
-            Stage {pet.evolutionStage}/6
+            {t('pet.evolution.stage', { current: pet.evolutionStage, max: 6 })}
           </span>
         </div>
         <div className="h-1.5 bg-purple-100 rounded-full overflow-hidden">
@@ -164,7 +166,7 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
             aria-valuenow={evolutionProgress}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Evolution progress"
+            aria-label={t('pet.evolution.progressLabel')}
           />
         </div>
 
@@ -173,20 +175,20 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           <div className="mt-1">
             {nextEvolutionInfo.canEvolve ? (
               <p className="text-[11px] font-bold text-green-600 animate-pulse">
-                ✨ Ready to evolve!
+                ✨ {t('pet.evolution.readyToEvolve')}
               </p>
             ) : nextEvolutionInfo.nextStageName ? (
               <p className="text-[10px] text-gray-600">
-                Next: {nextEvolutionInfo.nextStageName} (Level {nextEvolutionInfo.requiredLevel})
+                {t('pet.evolution.next', { stage: nextEvolutionInfo.nextStageName, level: nextEvolutionInfo.requiredLevel })}
                 {nextEvolutionInfo.levelsRemaining && nextEvolutionInfo.levelsRemaining > 0 && (
                   <span className="text-purple-600 font-semibold">
-                    {' '}• {nextEvolutionInfo.levelsRemaining} levels to go
+                    {' '}• {t('pet.evolution.levelsToGo', { count: nextEvolutionInfo.levelsRemaining })}
                   </span>
                 )}
               </p>
             ) : (
               <p className="text-[11px] font-bold text-yellow-600">
-                🎉 Max Evolution Reached!
+                🎉 {t('pet.evolution.maxReached')}
               </p>
             )}
           </div>
@@ -201,10 +203,10 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
             size="medium"
             onClick={onEvolve}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 animate-pulse"
-            aria-label={`Evolve ${pet.name} to ${nextEvolutionInfo.nextStageName}`}
+            aria-label={t('pet.evolution.evolveButton', { name: pet.name, stage: nextEvolutionInfo.nextStageName })}
           >
             <span className="text-base mb-0.5" aria-hidden="true">✨</span>
-            <span className="text-[12px] font-bold ml-2">Ready to Evolve!</span>
+            <span className="text-[12px] font-bold ml-2">{t('pet.evolution.readyToEvolve')}</span>
           </Button>
         </div>
       )}
@@ -217,11 +219,11 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           onClick={() => setShowFoodMenu(true)}
           disabled={!canFeed}
           className="flex-col h-auto py-1.5"
-          aria-label={`Feed ${pet.name} - Open food menu`}
+          aria-label={t('pet.actions.feedLabel', { name: pet.name })}
         >
           <span className="text-base mb-0.5" aria-hidden="true">🍔</span>
-          <span className="text-[10px] font-semibold">Feed</span>
-          <span className="text-[9px] text-gray-500">Menu</span>
+          <span className="text-[10px] font-semibold">{t('pet.actions.feed')}</span>
+          <span className="text-[9px] text-gray-500">{t('pet.actions.menu')}</span>
         </Button>
 
         <Button
@@ -230,10 +232,10 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           onClick={onPlay}
           disabled={!canPlay}
           className="flex-col h-auto py-1.5"
-          aria-label={`Play with ${pet.name} (requires 20 energy)`}
+          aria-label={t('pet.actions.playLabel', { name: pet.name })}
         >
           <span className="text-base mb-0.5" aria-hidden="true">🎮</span>
-          <span className="text-[10px] font-semibold">Play</span>
+          <span className="text-[10px] font-semibold">{t('pet.actions.play')}</span>
           <span className="text-[9px] text-gray-500">-20⚡</span>
         </Button>
 
@@ -243,19 +245,19 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           onClick={onBoost}
           disabled={!canBoost}
           className="flex-col h-auto py-1.5"
-          aria-label={`Boost ${pet.name} (costs 1 gem)`}
+          aria-label={t('pet.actions.boostLabel', { name: pet.name })}
         >
           <span className="text-base mb-0.5" aria-hidden="true">✨</span>
-          <span className="text-[10px] font-semibold">Boost</span>
+          <span className="text-[10px] font-semibold">{t('pet.actions.boost')}</span>
           <span className="text-[9px] text-gray-500">1💎</span>
         </Button>
       </div>
 
       {/* Status Message */}
       <div className="text-[10px] text-gray-600 italic pt-1">
-        {pet.hunger > 70 && "I'm hungry! 🍔"}
-        {pet.energy < 30 && pet.hunger <= 70 && "I'm tired... 😴"}
-        {pet.happiness > 80 && pet.hunger <= 70 && pet.energy >= 30 && "I'm so happy! 🌟"}
+        {pet.hunger > 70 && t('pet.status.hungry')}
+        {pet.energy < 30 && pet.hunger <= 70 && t('pet.status.tired')}
+        {pet.happiness > 80 && pet.hunger <= 70 && pet.energy >= 30 && t('pet.status.happy')}
       </div>
 
       {/* Navigation Buttons - Shop/Badges/Stats */}
@@ -265,30 +267,30 @@ export const VirtualPetWidget: React.FC<VirtualPetWidgetProps> = ({
           size="small"
           onClick={() => navigate('/shop')}
           className="flex-col h-auto py-1.5"
-          aria-label="Visit shop"
+          aria-label={t('pet.navigation.shopLabel')}
         >
           <span className="text-base mb-0.5" aria-hidden="true">🏪</span>
-          <span className="text-[10px] font-semibold">Shop</span>
+          <span className="text-[10px] font-semibold">{t('pet.navigation.shop')}</span>
         </Button>
         <Button
           variant="outline"
           size="small"
           onClick={() => navigate('/achievements')}
           className="flex-col h-auto py-1.5"
-          aria-label="View achievements and badges"
+          aria-label={t('pet.navigation.badgesLabel')}
         >
           <span className="text-base mb-0.5" aria-hidden="true">🏆</span>
-          <span className="text-[10px] font-semibold">Badges</span>
+          <span className="text-[10px] font-semibold">{t('pet.navigation.badges')}</span>
         </Button>
         <Button
           variant="outline"
           size="small"
           onClick={() => navigate('/achievements')}
           className="flex-col h-auto py-1.5"
-          aria-label="Check progress and stats"
+          aria-label={t('pet.navigation.statsLabel')}
         >
           <span className="text-base mb-0.5" aria-hidden="true">📊</span>
-          <span className="text-[10px] font-semibold">Stats</span>
+          <span className="text-[10px] font-semibold">{t('pet.navigation.stats')}</span>
         </Button>
       </div>
 

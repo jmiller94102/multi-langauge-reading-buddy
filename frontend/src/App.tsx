@@ -20,6 +20,8 @@ const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Pro
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
 const StudentLobby = lazy(() => import('./pages/StudentLobby').then(m => ({ default: m.StudentLobby })));
 const ComponentShowcase = lazy(() => import('./pages/ComponentShowcase').then(m => ({ default: m.ComponentShowcase })));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
 
 // Global Celebrations Component
 const GlobalCelebrations = () => {
@@ -53,6 +55,10 @@ const AnimatedRoutes = () => {
       >
         <Suspense fallback={<LoadingSpinner fullScreen message="Loading..." />}>
           <Routes location={location}>
+            {/* Authentication routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+
             {/* Default route redirects to Dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 

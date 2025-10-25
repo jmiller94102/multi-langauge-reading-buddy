@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { NAV_ITEMS } from '@/types/navigation';
 import { cn } from '@/lib/utils';
 import { SecondaryLanguageSelector } from '@/components/common/SecondaryLanguageSelector';
@@ -8,6 +9,7 @@ import type { SecondaryLanguage } from '@/types/story';
 export const SideNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   // Manage secondary language with localStorage
   const [secondaryLanguage, setSecondaryLanguage] = useState<SecondaryLanguage>(() => {
@@ -48,13 +50,13 @@ export const SideNav: React.FC = () => {
                   ? 'bg-primary-50 text-primary-700 border-primary-600 font-semibold shadow-sm'
                   : 'bg-transparent text-gray-700 border-transparent hover:bg-gray-50 hover:border-gray-300'
               )}
-              aria-label={item.ariaLabel}
+              aria-label={t(`nav.${item.id}`)}
               aria-current={isActive ? 'page' : undefined}
             >
               <span className="text-2xl" aria-hidden="true">
                 {item.icon}
               </span>
-              <span className="text-base">{item.label}</span>
+              <span className="text-base">{t(`nav.${item.id}`)}</span>
             </button>
           );
         })}

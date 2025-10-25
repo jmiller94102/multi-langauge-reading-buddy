@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useUser as useStackUser } from '@stackframe/stack';
 import type { UserState, UserSettings } from '../types/user';
 import type { UserInventory } from '../types/shop';
 
@@ -9,6 +10,7 @@ export interface LevelUpCelebration {
 
 export interface UserContextValue {
   user: UserState;
+  stackUser: any | null;
   inventory: UserInventory;
   updateUser: (updates: Partial<UserState>) => Promise<void>;
   addXP: (amount: number) => Promise<void>;
@@ -85,15 +87,28 @@ const createDefaultInventory = (): UserInventory => ({
 });
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const stackUser = useStackUser(); // Stack Auth user
   const [user, setUser] = useState<UserState>(createDefaultUser);
   const [inventory, setInventory] = useState<UserInventory>(createDefaultInventory);
   const [isLoading, setIsLoading] = useState(true);
   const [levelUpCelebration, setLevelUpCelebration] = useState<LevelUpCelebration | null>(null);
 
-  // Load user from backend or localStorage
+  // Load user from backend or localStorage, sync with Stack Auth
   useEffect(() => {
     const loadUser = async () => {
+      // If no Stack Auth user, don't load app data
+      if (!stackUser) {
+        setUser(createDefaultUser);
+        setInventory(createDefaultInventory);
+        setIsLoading(false);
+        return;
+      }
+
       try {
+        // Use Stack user ID for storage key
+        const storageKey = `readingApp_user_${stackUser.id}`;
+        const inventoryKey = `readingApp_inventory_${stackUser.id}`;
+
         // Try to load from backend first
         const response = await fetch(`${BACKEND_URL}/api/user`, {
           credentials: 'include',
@@ -104,19 +119,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(data);
         } else {
           // Fallback to localStorage
-          const stored = localStorage.getItem('readingApp_user');
+          const stored = localStorage.getItem(storageKey);
           if (stored) {
             setUser(JSON.parse(stored));
           } else {
-            // Create new user
+            // Create new user for this Stack Auth user
             const newUser = createDefaultUser();
+            newUser.id = stackUser.id; // Use Stack user ID
+            newUser.name = stackUser.displayName || 'Young Explorer';
             setUser(newUser);
-            localStorage.setItem('readingApp_user', JSON.stringify(newUser));
+            localStorage.setItem(storageKey, JSON.stringify(newUser));
           }
         }
 
         // Load inventory
-        const inventoryStored = localStorage.getItem('readingApp_inventory');
+        const inventoryStored = localStorage.getItem(inventoryKey);
         if (inventoryStored) {
           const parsedInventory = JSON.parse(inventoryStored);
           // Convert powerUps array back to Map
@@ -127,7 +144,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
           const newInventory = createDefaultInventory();
           setInventory(newInventory);
-          localStorage.setItem('readingApp_inventory', JSON.stringify({
+          localStorage.setItem(inventoryKey, JSON.stringify({
             ...newInventory,
             powerUps: Array.from(newInventory.powerUps.entries()),
           }));
@@ -135,17 +152,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (error) {
         console.error('Failed to load user:', error);
         // Fallback to localStorage
-        const stored = localStorage.getItem('readingApp_user');
+        const storageKey = `readingApp_user_${stackUser.id}`;
+        const inventoryKey = `readingApp_inventory_${stackUser.id}`;
+        
+        const stored = localStorage.getItem(storageKey);
         if (stored) {
           setUser(JSON.parse(stored));
         } else {
           const newUser = createDefaultUser();
+          newUser.id = stackUser.id;
+          newUser.name = stackUser.displayName || 'Young Explorer';
           setUser(newUser);
-          localStorage.setItem('readingApp_user', JSON.stringify(newUser));
+          localStorage.setItem(storageKey, JSON.stringify(newUser));
         }
 
         // Load inventory fallback
-        const inventoryStored = localStorage.getItem('readingApp_inventory');
+        const inventoryStored = localStorage.getItem(inventoryKey);
         if (inventoryStored) {
           const parsedInventory = JSON.parse(inventoryStored);
           setInventory({
@@ -161,12 +183,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     loadUser();
-  }, []);
+  }, [stackUser]);
 
   // Persist user changes
   const persistUser = useCallback(async (updatedUser: UserState) => {
     setUser(updatedUser);
-    localStorage.setItem('readingApp_user', JSON.stringify(updatedUser));
+    
+    // Use Stack user ID for storage key if authenticated
+    const storageKey = stackUser ? `readingApp_user_${stackUser.id}` : 'readingApp_user';
+    localStorage.setItem(storageKey, JSON.stringify(updatedUser));
 
     // Try to sync with backend
     try {
@@ -179,7 +204,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.warn('Failed to sync user with backend:', error);
     }
-  }, []);
+  }, [stackUser]);
 
   const updateUser = useCallback(async (updates: Partial<UserState>) => {
     const updatedUser = { ...user, ...updates };
@@ -303,7 +328,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ...updatedInventory,
       powerUps: Array.from(updatedInventory.powerUps.entries()),
     };
-    localStorage.setItem('readingApp_inventory', JSON.stringify(serializedInventory));
+    
+    // Use Stack user ID for storage key if authenticated
+    const inventoryKey = stackUser ? `readingApp_inventory_${stackUser.id}` : 'readingApp_inventory';
+    localStorage.setItem(inventoryKey, JSON.stringify(serializedInventory));
 
     // Try to sync with backend
     try {
@@ -316,7 +344,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.warn('Failed to sync inventory with backend:', error);
     }
-  }, []);
+  }, [stackUser]);
 
   const addToInventory = useCallback(async (
     itemId: string,
@@ -393,6 +421,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const value: UserContextValue = {
     user,
+    stackUser,
     inventory,
     updateUser,
     addXP,

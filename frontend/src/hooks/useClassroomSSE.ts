@@ -86,17 +86,32 @@ export function useClassroomSSE({
           } else if (data.type === 'progress_update') {
             // Update student list with new progress data - S2 sends data directly (not wrapped in data.data)
             const update = data as unknown as StudentState;
-            
+
             setStudents((prev) => {
               const existing = prev.find((s) => s.studentId === update.studentId);
-              
+
               if (existing) {
-                // Update existing student
-                return prev.map((s) =>
-                  s.studentId === update.studentId ? update : s
-                );
+                // CRITICAL FIX: Only update if new progress is higher (handle out-of-order SSE delivery)
+                // Compare both progress percentage AND paragraph number to handle all edge cases
+                const shouldUpdate =
+                  update.progress > existing.progress ||
+                  (update.currentParagraph !== undefined && existing.currentParagraph !== undefined &&
+                   update.currentParagraph > existing.currentParagraph);
+
+                if (shouldUpdate) {
+                  console.log(`[useClassroomSSE] Updating ${update.studentId}: ${existing.progress}% → ${update.progress}% (paragraph ${existing.currentParagraph} → ${update.currentParagraph})`);
+                  // Update existing student with new progress
+                  return prev.map((s) =>
+                    s.studentId === update.studentId ? update : s
+                  );
+                } else {
+                  // Ignore this update as it's stale/out-of-order
+                  console.log(`[useClassroomSSE] ⚠️ Ignoring out-of-order update for ${update.studentId}: ${update.progress}% (current: ${existing.progress}%), paragraph ${update.currentParagraph} (current: ${existing.currentParagraph})`);
+                  return prev; // Keep existing data
+                }
               } else {
                 // Add new student (shouldn't happen if student_join worked)
+                console.log(`[useClassroomSSE] Adding new student from progress_update: ${update.studentId}`);
                 return [...prev, update];
               }
             });
