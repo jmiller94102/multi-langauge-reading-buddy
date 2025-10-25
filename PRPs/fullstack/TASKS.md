@@ -1,282 +1,172 @@
-# Live Classroom Monitoring - Accelerated MVP Development
+# Live Classroom Monitoring - Accelerated MVP Development Plan
 
 **Timeline**: 5-7 days (40-56 hours)
-**Approach**: MVP-first, iterate later
-**Status**: In Progress
+**Current Status**: Day 1 COMPLETE ✅
 
 ---
 
-## Acceleration Strategy
+## Day 1: Backend S2 Integration (COMPLETE ✅)
 
-Original PRP Estimate: 3 weeks (120 hours)
-Accelerated MVP: 5-7 days (40-56 hours)
+**Goal**: S2.dev setup and REST API integration
 
-**How we accelerate**:
-- Use existing Express server (no new backend setup)
-- Use in-memory storage (skip database setup)
-- Focus on core real-time functionality only
-- Defer advanced features (alerts, analytics, mobile optimization)
-- Integrate with existing Reading page (no new student UI)
+**Status**: Complete
+
+**Tasks**:
+- [x] Install S2.dev client package - switched to REST API (Option B)
+- [x] Create classroom-s2.service.js with REST API integration
+- [x] Create classroom.routes.js with API endpoints
+- [x] Integrate routes with server.js
+- [x] Test S2 connection with curl
+
+**Completed Work**:
+- ✅ S2 REST API service implemented (POST /v1/basins for creating basins)
+- ✅ Correct endpoints configured: https://aws.s2.dev (account), https://{basin}.b.aws.s2.dev (basin)
+- ✅ Classroom routes created: /create-session, /update-progress, /subscribe/:sessionId
+- ✅ Test session created successfully: classroom-test-classroom-1-test-session-1-176127
+
+**Key Learnings**:
+- Switched from SDK to REST API due to ES module compatibility
+- S2.dev uses two endpoint types: account-level and basin-level
+- Basin creation: POST /v1/basins with JSON body {"basin": "name"}
+- Basin names must be 8-48 chars, lowercase, numbers, hyphens, globally unique
 
 ---
 
-## Day 1: Backend S2 Integration (8 hours)
+## Day 2: SSE Streaming & Additional Endpoints (NEXT)
 
-**Morning (4 hours)**:
-- [ ] Install @s2-dev/streamstore npm package
-- [ ] Create backend/services/classroom-s2.service.js
-- [ ] Implement createSession(), updateProgress(), subscribeToSession()
-- [ ] Test S2 connection with simple script
+**Goal**: Implement real-time updates via Server-Sent Events
 
-**Afternoon (4 hours)**:
-- [ ] Create backend/routes/classroom.routes.js
-- [ ] Implement POST /api/classroom/create-session
-- [ ] Implement POST /api/classroom/update-progress
-- [ ] Add routes to server.js
-- [ ] Test with curl
+**Status**: Not Started
+
+**Tasks**:
+- [ ] Implement GET /subscribe/:sessionId (SSE streaming)
+- [ ] Test SSE connection with curl
+- [ ] Implement GET /session/:sessionId (session details)
+- [ ] Implement POST /end-session
+- [ ] Test all endpoints together
+- [ ] Write integration tests
+
+**Estimated Time**: 4-6 hours
 
 **Validation**:
 ```bash
-curl -X POST http://localhost:8080/api/classroom/create-session \
-  -H "Content-Type: application/json" \
-  -d '{"classroomId":"test","teacherId":"t1","storyId":"s1"}'
-# Expected: Session created, S2 stream exists
-```
-
-**Deliverable**: S2 integration + basic session management working
-
----
-
-## Day 2: SSE Streaming + Progress Endpoint (8 hours)
-
-**Morning (4 hours)**:
-- [ ] Implement GET /api/classroom/subscribe/:sessionId (SSE)
-- [ ] Setup SSE headers and EventSource connection
-- [ ] Connect S2 subscription to SSE stream
-- [ ] Test SSE in browser console
-
-**Afternoon (4 hours)**:
-- [ ] Implement GET /api/classroom/session/:sessionId
-- [ ] Implement POST /api/classroom/end-session
-- [ ] Add error handling for all endpoints
-- [ ] Integration test (create session → update progress → receive via SSE)
-
-**Validation**:
-```bash
-# Terminal 1: Subscribe
+# Terminal 1: Subscribe to SSE
 curl -N http://localhost:8080/api/classroom/subscribe/session_123
 
-# Terminal 2: Send update
+# Terminal 2: Send progress update
 curl -X POST http://localhost:8080/api/classroom/update-progress \
   -d '{"sessionId":"session_123","studentId":"s1","progress":50}'
 
-# Terminal 1 should receive: data: {"type":"progress_update",...}
+# Terminal 1 should receive:
+data: {"type":"progress_update","studentId":"s1","progress":50}
 ```
-
-**Deliverable**: Real-time streaming backend complete
 
 ---
 
-## Day 3: Student Progress Service (8 hours)
+## Day 3: Frontend Progress Service
 
-**Morning (4 hours)**:
+**Goal**: Create student-side progress tracking service
+
+**Status**: Not Started
+
+**Tasks**:
 - [ ] Create frontend/src/services/classroom-progress.service.ts
 - [ ] Implement joinSession(), updatePosition(), sendProgressUpdate()
-- [ ] Add 5-second interval timer
 - [ ] Implement status detection (reading/idle/stuck)
+- [ ] Add 5-second interval timer
+- [ ] Write unit tests
 
-**Afternoon (4 hours)**:
-- [ ] Create frontend/src/types/classroom.ts
-- [ ] Define ClassroomSession, StudentProgress, ProgressUpdate interfaces
-- [ ] Write unit tests for progress service
-- [ ] Test service in browser console
-
-**Validation**:
-```typescript
-// Browser console test
-classroomProgressService.joinSession('test', 'student1', 10);
-classroomProgressService.updatePosition(3);
-// Check network tab: POST every 5 seconds
-```
-
-**Deliverable**: Student progress service working
+**Estimated Time**: 4-6 hours
 
 ---
 
-## Day 4: Reading Page Integration (8 hours)
+## Day 4: Reading Page Integration
 
-**Morning (4 hours)**:
+**Goal**: Integrate progress tracking into reading experience
+
+**Status**: Not Started
+
+**Tasks**:
 - [ ] Add Intersection Observer to Reading page
-- [ ] Add data-paragraph-index to story paragraphs
+- [ ] Track visible paragraphs
 - [ ] Connect observer to progress service
-- [ ] Test viewport tracking with real story
+- [ ] Handle sessionId URL parameter
+- [ ] Test with real story content
 
-**Afternoon (4 hours)**:
-- [ ] Add sessionId URL parameter handling
-- [ ] Auto-join session on mount
-- [ ] Add cleanup on unmount
-- [ ] Test with multiple student tabs (5+)
-- [ ] Fix any race conditions
-
-**Validation**:
-```bash
-# Open: http://localhost:5173/reading?sessionId=abc&studentId=s1
-# Scroll through story
-# Check backend logs for progress updates
-```
-
-**Deliverable**: Student-side tracking complete
+**Estimated Time**: 4-6 hours
 
 ---
 
-## Day 5: Teacher Dashboard Skeleton (8 hours)
+## Day 5: Teacher Dashboard UI
 
-**Morning (4 hours)**:
-- [ ] Create frontend/src/pages/TeacherDashboard.tsx
-- [ ] Setup basic layout (header, metrics area, student grid)
-- [ ] Implement EventSource (SSE) connection
-- [ ] Handle initial state loading
+**Goal**: Create real-time teacher dashboard
 
-**Afternoon (4 hours)**:
-- [ ] Handle real-time progress updates
-- [ ] Update student state from SSE events
-- [ ] Add error handling and reconnection
-- [ ] Test with 1 teacher + 5 students
+**Status**: Not Started
 
-**Validation**:
-```bash
-# Open teacher dashboard
-# Open 5 student reading tabs
-# Verify progress updates appear on dashboard within 5 seconds
-```
-
-**Deliverable**: Basic dashboard receiving real-time updates
-
----
-
-## Day 6: Student Card Component (8 hours)
-
-**Morning (4 hours)**:
-- [ ] Create StudentCard component
-- [ ] Add progress bar
-- [ ] Add status indicator (color dot: green/yellow/red/blue)
-- [ ] Add student name display
-
-**Afternoon (4 hours)**:
-- [ ] Style with Tailwind CSS
-- [ ] Add smooth progress animations
+**Tasks**:
+- [ ] Create TeacherDashboard.tsx skeleton
+- [ ] Implement SSE connection (EventSource)
+- [ ] Handle real-time updates
+- [ ] Display metrics (avg progress, completion, stuck students)
 - [ ] Create student grid layout
-- [ ] Make responsive (desktop focus)
 
-**Validation**:
-```bash
-# Dashboard displays all students
-# Progress bars update smoothly
-# Status colors match student state
-```
-
-**Deliverable**: Student card component complete
+**Estimated Time**: 6-8 hours
 
 ---
 
-## Day 7: Testing & Polish (8 hours)
+## Day 6: Student Cards & Metrics
 
-**Morning (4 hours)**:
-- [ ] Test with 10+ student tabs
-- [ ] Verify <5 second update latency
-- [ ] Test SSE reconnection scenarios
-- [ ] Fix any performance issues
+**Goal**: Build student card component and metrics
 
-**Afternoon (4 hours)**:
-- [ ] Add basic class metrics (avg progress, completion count)
-- [ ] Add session creation UI (teacher assigns story)
-- [ ] Add session end UI (teacher ends session)
-- [ ] Final end-to-end testing
+**Status**: Not Started
 
-**Validation**:
-```bash
-# Complete flow: Teacher creates → Students read → Teacher watches → Teacher ends
-# 10+ students simultaneously
-# All progress updates arrive
-# No console errors
-```
+**Tasks**:
+- [ ] Create StudentCard.tsx component
+- [ ] Add progress bar and status indicators
+- [ ] Implement alert system for stuck students
+- [ ] Add animations
+- [ ] Test with 10+ students
 
-**Deliverable**: MVP feature complete and functional
+**Estimated Time**: 4-6 hours
 
 ---
 
-## Progress Tracking
+## Day 7: Testing & Polish
 
-### Day 1: Backend S2 Integration
-- [ ] S2 client installed and configured
-- [ ] S2 service created
-- [ ] Session creation endpoint working
-- [ ] Progress update endpoint working
+**Goal**: End-to-end testing and final polish
 
-### Day 2: SSE Streaming
-- [ ] SSE endpoint implemented
-- [ ] Real-time updates flowing
-- [ ] Session management complete
+**Status**: Not Started
 
-### Day 3: Student Progress Service
-- [ ] Progress service created
-- [ ] Status detection working
-- [ ] Unit tests passing
+**Tasks**:
+- [ ] Test full flow: teacher creates → students read → dashboard updates
+- [ ] Performance testing with 30+ students
+- [ ] Add session creation/end UI
+- [ ] Final code review
+- [ ] Update documentation
 
-### Day 4: Reading Page Integration
-- [ ] Viewport tracking working
-- [ ] Session join/leave working
-- [ ] Multi-student testing complete
-
-### Day 5: Teacher Dashboard Skeleton
-- [ ] Dashboard page created
-- [ ] SSE connection working
-- [ ] Real-time updates displaying
-
-### Day 6: Student Card Component
-- [ ] StudentCard component complete
-- [ ] Grid layout working
-- [ ] Animations smooth
-
-### Day 7: Testing & Polish
-- [ ] Performance validated (10+ students)
-- [ ] Session creation/end UI complete
-- [ ] End-to-end flow working
+**Estimated Time**: 4-6 hours
 
 ---
 
-## Deferred Features (Post-MVP)
+## Progress Summary
 
-These features are in the original PRP but deferred for speed:
+**Completed**: 1/7 days (Day 1)
+**Remaining**: 6 days (estimated 24-42 hours)
+**Total Estimated Time**: 40-56 hours
 
-- Advanced alerts and notifications
-- Detailed analytics and metrics
-- Mobile optimization
-- Teacher intervention tools ("Send Help" button)
-- Performance testing with 30+ students
-- Comprehensive error handling
-- Production deployment setup
+**Current Deliverables**:
+- ✅ Backend S2 REST API integration
+- ✅ Classroom routes (create, update, subscribe)
+- ✅ Test session creation verified
 
----
-
-## MVP Scope
-
-**IN SCOPE**:
-- Teacher creates classroom session
-- Students join automatically via URL parameter
-- Viewport-based progress tracking (every 5 seconds)
-- Real-time dashboard with student progress bars
-- Session end functionality
-
-**OUT OF SCOPE** (for MVP):
-- Advanced alerts for stuck students
-- Detailed metrics/analytics
-- Mobile responsive design
-- Teacher intervention features
-- Production-grade error handling
-- Load testing beyond 10 students
+**Next Steps**:
+1. Implement SSE streaming endpoint (Day 2)
+2. Create frontend progress service (Day 3)
+3. Integrate into Reading page (Day 4)
+4. Build Teacher Dashboard (Days 5-6)
+5. Test and polish (Day 7)
 
 ---
 
-**Status**: Ready to Execute
-**Next Step**: Begin Day 1 - Backend S2 Integration
+**Status**: ✅ Day 1 Complete - Ready for Day 2
+**Last Updated**: 2025-01-26
