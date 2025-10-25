@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import type { SidebarTab as SidebarTabType } from '@/components/layout/CollapsibleSidebar';
@@ -55,8 +55,12 @@ export const Reading: React.FC = () => {
 
   // Classroom tracking with SessionContext
   const { sessionId: contextSessionId, studentId: contextStudentId, isConnected } = useSession();
-  const totalParagraphs = story?.paragraphs?.length || story?.primarySentences?.filter(s => s === '__PARAGRAPH_BREAK__').length || 0;
-  
+
+  // Memoize totalParagraphs to prevent unnecessary effect re-runs
+  const totalParagraphs = useMemo(() => {
+    return story?.paragraphs?.length || story?.primarySentences?.filter(s => s === '__PARAGRAPH_BREAK__').length || 0;
+  }, [story]);
+
   const { isTracking } = useClassroomTracking({
     sessionId: contextSessionId || undefined,
     studentId: contextStudentId || user.id,

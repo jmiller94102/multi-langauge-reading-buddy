@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 import { PrimaryLanguageSelector } from '@/components/common/PrimaryLanguageSelector';
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ className }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useUser();
 
   const coins = user.coins;
@@ -28,11 +30,11 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
         <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg px-2 py-1"
-          aria-label="Go to Dashboard"
+          aria-label={t('header.goToDashboard')}
         >
           <span className="text-2xl font-bold text-primary-600">📚</span>
           <span className="hidden sm:block text-xl font-bold text-gray-900">
-            Reading Quest
+            {t('app.title')}
           </span>
         </button>
 
@@ -45,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
           <div
             className="flex items-center gap-1.5 bg-gradient-to-br from-yellow-50 to-yellow-100 px-3 py-1.5 rounded-full border border-yellow-200"
             role="status"
-            aria-label={`${coins} coins`}
+            aria-label={t('header.coinsLabel', { count: coins })}
           >
             <span className="text-lg" aria-hidden="true">
               🪙
@@ -59,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
           <div
             className="flex items-center gap-1.5 bg-gradient-to-br from-blue-50 to-blue-100 px-3 py-1.5 rounded-full border border-blue-200"
             role="status"
-            aria-label={`${gems} gems`}
+            aria-label={t('header.gemsLabel', { count: gems })}
           >
             <span className="text-lg" aria-hidden="true">
               💎
@@ -73,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
           <div
             className="hidden sm:flex items-center gap-1.5 bg-gradient-to-br from-orange-50 to-orange-100 px-3 py-1.5 rounded-full border border-orange-200"
             role="status"
-            aria-label={`${streak} day streak`}
+            aria-label={t('header.streakLabel', { count: streak })}
           >
             <span className="text-lg" aria-hidden="true">
               🔥

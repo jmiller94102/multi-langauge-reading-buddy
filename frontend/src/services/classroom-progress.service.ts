@@ -29,13 +29,14 @@ class ClassroomProgressService {
   private currentSession: ClassroomSession | null = null;
   private studentId: string | null = null;
   private config: ProgressTrackingConfig = DEFAULT_CONFIG;
-  
+  private activeSessionId: string | null = null; // Track which session is currently active
+
   // Progress tracking state
   private currentParagraph: number = 0;
   private totalParagraphs: number = 0;
   private lastProgressUpdate: number = 0;
   private lastParagraphChange: number = 0;
-  
+
   // Interval timers
   private progressTimer: NodeJS.Timeout | null = null;
   
@@ -53,6 +54,15 @@ class ClassroomProgressService {
     config?: Partial<ProgressTrackingConfig>
   ): Promise<void> {
     try {
+      // If there's an active session, leave it first
+      if (this.activeSessionId && this.activeSessionId !== sessionId) {
+        console.log(`[ClassroomProgress] Leaving previous session ${this.activeSessionId} before joining ${sessionId}`);
+        await this.leaveSession();
+      }
+
+      // Set the active session ID FIRST to prevent race conditions
+      this.activeSessionId = sessionId;
+
       // Get session details from backend (if needed)
       // For now, create a minimal session object
       this.currentSession = {
@@ -66,15 +76,15 @@ class ClassroomProgressService {
       this.currentParagraph = 0;
       this.lastProgressUpdate = Date.now();
       this.lastParagraphChange = Date.now();
-      
+
       // Merge config
       if (config) {
         this.config = { ...DEFAULT_CONFIG, ...config };
       }
-      
+
       // Start progress tracking interval
       this.startProgressTracking();
-      
+
       console.log(`[ClassroomProgress] Joined session: ${sessionId} as student: ${studentId}`);
     } catch (error) {
       console.error('[ClassroomProgress] Error joining session:', error);
@@ -87,26 +97,35 @@ class ClassroomProgressService {
    */
   async leaveSession(): Promise<void> {
     if (!this.currentSession) {
+      console.log(`[ClassroomProgress] leaveSession called but no active session`);
       return;
     }
-    
+
+    const sessionIdBeingLeft = this.currentSession.sessionId;
+
     try {
+      // Stop progress tracking FIRST to prevent new updates
+      this.stopProgressTracking();
+
       // Send final progress update before leaving
       await this.sendProgressUpdate('completed');
-      
-      // Stop progress tracking
-      this.stopProgressTracking();
-      
-      console.log(`[ClassroomProgress] Left session: ${this.currentSession.sessionId}`);
-      
+
+      console.log(`[ClassroomProgress] Left session: ${sessionIdBeingLeft}`);
+
       // Clear session state
       this.currentSession = null;
       this.studentId = null;
       this.currentParagraph = 0;
       this.totalParagraphs = 0;
+      this.activeSessionId = null;
     } catch (error) {
       console.error('[ClassroomProgress] Error leaving session:', error);
-      throw error;
+      // Still clear the session even if there's an error
+      this.currentSession = null;
+      this.studentId = null;
+      this.currentParagraph = 0;
+      this.totalParagraphs = 0;
+      this.activeSessionId = null;
     }
   }
   
@@ -115,7 +134,15 @@ class ClassroomProgressService {
    * @param paragraphIndex - Current paragraph index (0-based)
    */
   updatePosition(paragraphIndex: number): void {
-    if (!this.currentSession || !this.studentId) {
+    // Check if we have an active session AND it matches the current session
+    if (!this.currentSession || !this.studentId || !this.activeSessionId) {
+      console.warn(`[ClassroomProgress] updatePosition called but no active session (paragraph ${paragraphIndex + 1})`);
+      return;
+    }
+
+    // Verify the current session matches the active session (prevent stale updates)
+    if (this.currentSession.sessionId !== this.activeSessionId) {
+      console.warn(`[ClassroomProgress] updatePosition called for stale session (current: ${this.currentSession.sessionId}, active: ${this.activeSessionId})`);
       return;
     }
 
@@ -183,6 +210,12 @@ class ClassroomProgressService {
       return;
     }
 
+    // Verify active session matches current session
+    if (this.currentSession.sessionId !== this.activeSessionId) {
+      console.warn(`[ClassroomProgress] Skipping progress update - session mismatch (current: ${this.currentSession.sessionId}, active: ${this.activeSessionId})`);
+      return;
+    }
+
     try {
       const progressUpdate: StudentProgressUpdate = {
         sessionId: this.currentSession.sessionId,
@@ -199,8 +232,10 @@ class ClassroomProgressService {
         totalParagraphs: this.totalParagraphs
       };
 
-      console.log(`[ClassroomProgress] Sending update: paragraph ${this.currentParagraph + 1}/${this.totalParagraphs}, progress ${progressUpdate.progress}%, status ${progressUpdate.status}`);
+      console.log(`[ClassroomProgress] 🚀 SENDING REQUEST to backend: paragraph ${this.currentParagraph + 1}/${this.totalParagraphs}, progress ${progressUpdate.progress}%, status ${progressUpdate.status}`);
+      console.log(`[ClassroomProgress] 📦 Request body:`, JSON.stringify(requestBody, null, 2));
 
+      const startTime = Date.now();
       const response = await fetch(`${API_BASE_URL}/classroom/update-progress`, {
         method: 'POST',
         headers: {
@@ -208,22 +243,33 @@ class ClassroomProgressService {
         },
         body: JSON.stringify(requestBody),
       });
+      const endTime = Date.now();
+
+      console.log(`[ClassroomProgress] 📡 Response received in ${endTime - startTime}ms - Status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
-        throw new Error(`Failed to send progress update: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`[ClassroomProgress] ❌ Backend error response:`, errorText);
+        throw new Error(`Failed to send progress update: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log(`[ClassroomProgress] 📥 Response data:`, data);
 
       if (!data.success) {
+        console.error(`[ClassroomProgress] ❌ Backend returned success=false:`, data.error);
         throw new Error(data.error || 'Failed to send progress update');
       }
 
       this.lastProgressUpdate = Date.now();
 
-      console.log(`[ClassroomProgress] Progress update sent successfully`);
+      console.log(`[ClassroomProgress] ✅ Progress update sent successfully to S2`);
     } catch (error) {
-      console.error('[ClassroomProgress] Error sending progress update:', error);
+      console.error('[ClassroomProgress] ❌❌❌ ERROR sending progress update:', error);
+      console.error('[ClassroomProgress] Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       // Don't throw - allow the app to continue
     }
   }

@@ -20,14 +20,19 @@ export const useClassroomTracking = ({
 }: UseClassroomTrackingOptions) => {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const currentParagraphRef = useRef<number>(0);
+  const isActiveRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Don't start tracking if disabled or missing required data
     if (!enabled || !sessionId || !studentId || totalParagraphs === 0) {
+      console.log(`[useClassroomTracking] Not starting - enabled:${enabled}, sessionId:${sessionId}, studentId:${studentId}, totalParagraphs:${totalParagraphs}`);
       return;
     }
 
-    console.log(`[useClassroomTracking] Starting tracking for session ${sessionId}, student ${studentId}`);
+    // Mark this effect as active
+    isActiveRef.current = true;
+
+    console.log(`[useClassroomTracking] Starting tracking for session ${sessionId}, student ${studentId} (enabled:${enabled})`);
 
     // Count actual rendered paragraphs from the DOM (more reliable than prop)
     const paragraphs = document.querySelectorAll('[data-paragraph-index]');
@@ -42,7 +47,8 @@ export const useClassroomTracking = ({
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          // Only process if this effect is still active (prevents race conditions)
+          if (entry.isIntersecting && isActiveRef.current) {
             const paragraphIndex = parseInt(
               entry.target.getAttribute('data-paragraph-index') || '0',
               10
@@ -58,8 +64,10 @@ export const useClassroomTracking = ({
               console.log(`[useClassroomTracking] Student at paragraph ${paragraphIndex + 1}/${actualTotalParagraphs} (${progress}%)`);
 
               // Update position in the service (which will trigger progress updates)
-              classroomProgressService.updatePosition(paragraphIndex, actualTotalParagraphs);
+              classroomProgressService.updatePosition(paragraphIndex);
             }
+          } else if (entry.isIntersecting && !isActiveRef.current) {
+            console.log(`[useClassroomTracking] Ignoring paragraph update from stale observer`);
           }
         });
       },
@@ -80,8 +88,12 @@ export const useClassroomTracking = ({
 
     // Cleanup function
     return () => {
-      console.log(`[useClassroomTracking] Cleaning up tracking for session ${sessionId}`);
-      
+      console.log(`[useClassroomTracking] Cleaning up tracking for session ${sessionId} (enabled was: ${enabled})`);
+      console.log(`[useClassroomTracking] Cleanup reason - dependencies changed or component unmounting`);
+
+      // Mark this effect as inactive to prevent stale observer callbacks
+      isActiveRef.current = false;
+
       // Disconnect observer
       if (observerRef.current) {
         observerRef.current.disconnect();

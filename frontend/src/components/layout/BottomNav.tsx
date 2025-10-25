@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { NAV_ITEMS } from '@/types/navigation';
 import { cn } from '@/lib/utils';
 
 export const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   return (
     <nav
@@ -26,7 +28,7 @@ export const BottomNav: React.FC = () => {
                   ? 'text-primary-600 bg-primary-50'
                   : 'text-gray-600 hover:text-primary-500 hover:bg-gray-50'
               )}
-              aria-label={item.ariaLabel}
+              aria-label={t(`nav.${item.id}`)}
               aria-current={isActive ? 'page' : undefined}
             >
               <span className="text-2xl" aria-hidden="true">
@@ -38,7 +40,7 @@ export const BottomNav: React.FC = () => {
                   isActive ? 'font-bold' : 'font-normal'
                 )}
               >
-                {item.label}
+                {t(`nav.${item.id}`)}
               </span>
             </button>
           );

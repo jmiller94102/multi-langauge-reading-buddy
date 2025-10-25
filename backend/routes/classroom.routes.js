@@ -155,56 +155,90 @@ router.post('/join-session', async (req, res) => {
 
 // POST /api/classroom/update-progress - Update student progress
 router.post('/update-progress', async (req, res) => {
+  console.log('\n====================================');
+  console.log('🔵 [BACKEND] /update-progress REQUEST RECEIVED');
+  console.log('====================================');
+  console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
+  console.log('🕒 Server time:', new Date().toISOString());
+
   try {
-    const { sessionId, studentId, currentParagraph, totalParagraphs, timestamp } = req.body;
+    const { sessionId, studentId, currentParagraph, totalParagraphs, timestamp, status, progress } = req.body;
 
     if (!sessionId || !studentId || currentParagraph === undefined) {
+      console.error('❌ [BACKEND] Missing required fields');
+      console.error('   - sessionId:', sessionId);
+      console.error('   - studentId:', studentId);
+      console.error('   - currentParagraph:', currentParagraph);
       return res.status(400).json({
         success: false,
         error: 'Missing required fields'
       });
     }
 
+    console.log(`📊 [BACKEND] Validated request - Session: ${sessionId}, Student: ${studentId}, Paragraph: ${currentParagraph + 1}/${totalParagraphs}`);
+
     // Get session to look up student name
     const session = sessions.get(sessionId);
     if (!session) {
+      console.error(`❌ [BACKEND] Session not found: ${sessionId}`);
+      console.error('   Available sessions:', Array.from(sessions.keys()));
       return res.status(404).json({
         success: false,
         error: 'Session not found'
       });
     }
 
+    console.log(`✅ [BACKEND] Session found: ${sessionId}, Students: ${session.students.length}`);
+
     // Find student in session to get their name
     const student = session.students.find(s => s.studentId === studentId);
     const studentName = student?.studentName || studentId;
 
-    // Calculate progress percentage
-    const progress = totalParagraphs > 0
-      ? Math.round(((currentParagraph + 1) / totalParagraphs) * 100)
-      : 0;
+    console.log(`👤 [BACKEND] Student name resolved: ${studentName}`);
 
-    // Determine status based on progress
-    let status = 'reading';
-    if (progress >= 100) {
-      status = 'completed';
-    } else if (progress === 0) {
-      status = 'idle';
+    // Calculate progress percentage (use value from request if provided, otherwise calculate)
+    const calculatedProgress = progress !== undefined ? progress : (totalParagraphs > 0
+      ? Math.round(((currentParagraph + 1) / totalParagraphs) * 100)
+      : 0);
+
+    console.log(`📈 [BACKEND] Progress: ${calculatedProgress}% (paragraph ${currentParagraph + 1}/${totalParagraphs})`);
+
+    // Determine status based on progress (use value from request if provided)
+    let finalStatus = status || 'reading';
+    if (!status) {
+      if (calculatedProgress >= 100) {
+        finalStatus = 'completed';
+      } else if (calculatedProgress === 0) {
+        finalStatus = 'idle';
+      }
     }
 
-    // Update progress in S2 with studentName and calculated progress
-    await classroomS2Service.updateProgress(sessionId, {
+    console.log(`🏷️  [BACKEND] Status: ${finalStatus}`);
+
+    // Prepare S2 update payload
+    const s2Payload = {
       studentId,
       studentName,
       currentParagraph,
       totalParagraphs,
-      progress,
-      status,
+      progress: calculatedProgress,
+      status: finalStatus,
       timestamp: timestamp || new Date().toISOString()
-    });
+    };
+
+    console.log('🚀 [BACKEND] Sending to S2:', JSON.stringify(s2Payload, null, 2));
+
+    // Update progress in S2 with studentName and calculated progress
+    await classroomS2Service.updateProgress(sessionId, s2Payload);
+
+    console.log('✅ [BACKEND] S2 update successful');
+    console.log('====================================\n');
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Error updating progress:', error);
+    console.error('❌❌❌ [BACKEND] ERROR updating progress:', error);
+    console.error('Stack trace:', error.stack);
+    console.log('====================================\n');
     res.status(500).json({
       success: false,
       error: 'Failed to update progress'

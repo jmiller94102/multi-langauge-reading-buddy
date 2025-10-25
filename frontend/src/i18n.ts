@@ -4,6 +4,9 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translation files
 import enTranslations from './locales/en.json';
+import esTranslations from './locales/es-419.json';
+import koTranslations from './locales/ko.json';
+import zhTranslations from './locales/zh-CN.json';
 
 i18n
   // Detect user language
@@ -16,10 +19,15 @@ i18n
       en: {
         translation: enTranslations,
       },
-      // Additional languages will be added after Lingo.dev generation
-      // 'es-419': { translation: esTranslations },
-      // 'ko': { translation: koTranslations },
-      // 'zh-CN': { translation: zhTranslations },
+      'es-419': {
+        translation: esTranslations,
+      },
+      ko: {
+        translation: koTranslations,
+      },
+      'zh-CN': {
+        translation: zhTranslations,
+      },
     },
     fallbackLng: 'en',
     debug: import.meta.env.DEV,
