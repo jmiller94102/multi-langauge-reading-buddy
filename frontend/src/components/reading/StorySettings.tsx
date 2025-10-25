@@ -105,9 +105,9 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
           </label>
           <div className="flex gap-1">
             {([
-              { value: 'min', label: 'Min' },
-              { value: 'max', label: 'Max' },
-              { value: 'insane', label: 'Insane' },
+              { value: 'min', label: t('reading.minLength') },
+              { value: 'max', label: t('reading.maxLength') },
+              { value: 'insane', label: t('reading.insaneHumor') },
             ] as { value: HumorLevel; label: string }[]).map(({ value, label }) => (
               <button
                 key={value}
@@ -117,7 +117,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
                     ? 'bg-accent-500 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                aria-label={`Select ${label} humor level`}
+                aria-label={t('reading.selectHumorLevel', { level: label })}
                 aria-pressed={settings.humorLevel === value}
               >
                 {label}
@@ -129,14 +129,14 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
         {/* Visual Theme */}
         <div>
           <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-            Visual Theme:
+            {t('reading.visualTheme')}
           </label>
           <div className="grid grid-cols-2 gap-1">
             {([
-              { value: 'space', label: 'Space', emoji: '🚀' },
-              { value: 'jungle', label: 'Jungle', emoji: '🌴' },
-              { value: 'minecraft', label: 'Minecraft', emoji: '⛏️' },
-              { value: 'tron', label: 'Tron', emoji: '💠' },
+              { value: 'space', label: t('reading.themes.space'), emoji: '🚀' },
+              { value: 'jungle', label: t('reading.themes.jungle'), emoji: '🌴' },
+              { value: 'minecraft', label: t('reading.themes.minecraft'), emoji: '⛏️' },
+              { value: 'tron', label: t('reading.themes.tron'), emoji: '💠' },
             ] as { value: VisualTheme; label: string; emoji: string }[]).map(({ value, label, emoji }) => (
               <button
                 key={value}
@@ -146,7 +146,7 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
                     ? 'bg-purple-500 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                aria-label={`Select ${label} theme`}
+                aria-label={t('reading.selectTheme', { theme: label })}
                 aria-pressed={settings.visualTheme === value}
               >
                 <span className="text-base" aria-hidden="true">{emoji}</span>
@@ -160,18 +160,18 @@ export const StorySettings: React.FC<StorySettingsProps> = ({ settings, onChange
       {/* Optional Vocabulary Card */}
       <div className="card py-1.5 px-2 space-y-1">
         <h3 className="text-child-xs font-bold text-gray-900 border-b border-gray-200 pb-1">
-          📚 Optional Vocabulary
+          📚 {t('reading.optionalVocabulary')}
         </h3>
         <textarea
           value={settings.customVocabulary?.join(', ') || ''}
           onChange={handleCustomVocabularyChange}
-          placeholder="basketball, teamwork, victory, strategy, champion"
+          placeholder={t('reading.vocabularyPlaceholder')}
           className="w-full p-1.5 border border-gray-300 rounded-lg text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
           rows={2}
-          aria-label="Custom vocabulary words (comma-separated)"
+          aria-label={t('reading.customVocabularyLabel')}
         />
         <p className="text-[10px] text-gray-600 italic">
-          Comma-separated words to include in the story
+          {t('reading.vocabularyHint')}
         </p>
       </div>
     </div>

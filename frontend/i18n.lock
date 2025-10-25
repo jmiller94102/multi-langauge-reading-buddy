@@ -24,15 +24,42 @@ checksums:
     languages/zh-CN: 50f718bf150ae7e23e4d5e91def35efe
     languages/korean: 99d3a279a51280e063545941b380f6a8
     languages/mandarin: 1740870ae132834c6d4ca972bf11c871
-    dashboard/welcome: c00587930a1125357b4e29646accfb71
+    dashboard/welcome: 73a14dec47209de4d591969af14f83d7
+    dashboard/welcomeBack: 73a14dec47209de4d591969af14f83d7
     dashboard/level: 1e3bf31d5c6083e898dd3e3359fbb0c2
+    dashboard/levelShort: ec3deedf9ca706216fea5ae775dc0de9
+    dashboard/toNextLevel: ddde114230993593d8370d947fd3b76e
     dashboard/xp: 405c81bc1a43bd18f6fba18f7668b620
     dashboard/coins: 4bb3f8f7821707ce5c9f3d35c6d1e23c
     dashboard/gems: a0335827248ae438d01f5c438056e19b
     dashboard/streak: 6d4a1b2a44dc87911b5a8e0d253cb328
+    dashboard/dayStreak: a3d1262eb42387ae40c65df1306bcf0f
+    dashboard/best: 178c4c2661af127082c0a898732a0ef2
+    dashboard/badges: a11ad9f87d9fa5c44b857d8c6e0d23d4
+    dashboard/startReading: 46c1b43436bd7494b7772d3098798fc2
+    dashboard/startReadingLabel: 254432e5d5e89f2f971663ef39627c75
+    dashboard/visitShop: b6faba365df211b95199f6c72eca0bd6
+    dashboard/viewAchievements: bc3997f4b5c50a6dc38d805722890883
+    dashboard/checkProgress: b57354177697243faf1af8172c38ff3b
+    dashboard/quickActions: 157a51ac3ffbc527a52379a547499fe2
+    welcomeSection/welcomeBack: 73a14dec47209de4d591969af14f83d7
+    welcomeSection/toLevel: ddde114230993593d8370d947fd3b76e
+    statsGrid/xp: 405c81bc1a43bd18f6fba18f7668b620
+    statsGrid/level: 1e3bf31d5c6083e898dd3e3359fbb0c2
+    statsGrid/levelShort: ec3deedf9ca706216fea5ae775dc0de9
+    statsGrid/streak: 27f854f4b2b6fe3d9740c877d79d32cb
+    statsGrid/streakDays: a5b015eced7db66470aed95c8c2db5e2
+    statsGrid/best: 178c4c2661af127082c0a898732a0ef2
+    statsGrid/badges: a11ad9f87d9fa5c44b857d8c6e0d23d4
+    quest/claim: 5649a7cd8b85ad2a53c9ff27704b4dad
+    quest/claimRewards: 25a9576952fc14ad54a0038f653f6d2f
+    quest/daily: 6418887c084b6670f761592dce1e1954
+    quest/weekly: f102d20b4f7831d0044d2857184cd261
+    quest/progress: 08192c89362b64772a4e0a7cc8fc3917
     reading/title: a2728e437ed1b43848ae86397a4f168d
     reading/generateButton: 7a1ed71ec853e5bb292cac0f686c85ee
-    reading/generating: 4826ec9b8b6f89d54bd271a8796d660f
+    reading/generating: 25cd9f3e87054e3d8e27bf8c02d4d1da
+    reading/generatingYourStory: 4826ec9b8b6f89d54bd271a8796d660f
     reading/readAloud: 49195eaa11f005ca0d21449f94d9f17d
     reading/languageSettings: bff4627cb11a6ab62b91406d997b0678
     reading/secondaryLanguage: 80d5f4d3b6dabc6a0abf4866097e1b28
@@ -45,6 +72,90 @@ checksums:
     reading/showRomanization: 7821e9260efc758acecc34d9c9f43a7e
     reading/audioSupport: 8282c5b6e777c5aec0a349bd43885c68
     reading/autoPlay: ea054b9e2b3ce278ca8ab0e456fd0c12
+    reading/storyPrompt: 2421bfb964a2a559f51d58c4238c6d8c
+    reading/storyPromptPlaceholder: 66ca954eac2d07b47d6cbd848976f292
+    reading/storyLength: 2f70da3d0b7b0794453cd100bc58a888
+    reading/gradeLevel: 924abe644f84fb58be4a15322a3b8e9b
+    reading/humorLevel: ac7866259436f1e4ee1f849ebcb79118
+    reading/visualTheme: 71f713fcc45eada071b073836186b534
+    reading/optionalVocabulary: e02c75e5d5645866083ff58c3f7c0790
+    reading/vocabularyPlaceholder: 86b054edc639ceafefde2ec14bad249c
+    reading/vocabularyHint: e6e458b1a9dea0c7bcf6f745f1647801
+    reading/settings: 8df6777277469c1fd88cc18dde2f1cc3
+    reading/storySettings: 5814cf21cc3ded0235bfc4fb5b39bbb5
+    reading/clickToExpand: 8a301c6b046aa9601f5f0261f864f707
+    reading/selectGradeLevel: edf2a3e5b66f62f02cac955af3ace53f
+    reading/selectHumorLevel: ee761033939386aea3b18d855c2e04b4
+    reading/selectTheme: cdbb41a424b73309d7fd14c396b986c2
+    reading/customVocabularyLabel: 43994022399e9fbbffbd08a8418e567c
+    reading/storyLengthLabel: d212f5cb0335bf13f98ec3abca620fef
+    reading/minLength: 51bb8c9c784f032bdeb93af40705d7f2
+    reading/maxLength: 0f2c95417ecdfc5c09ca1b8ffb7ac975
+    reading/insaneHumor: 5a3a81e8dc1f187130fa0497057c1c71
+    reading/themes/space: 71eb5d5f4513ea541737f4ba865b4793
+    reading/themes/jungle: 9b9d9f9e7d1bdcf07a29385e06b0ca23
+    reading/themes/minecraft: 0168b678e7600c8f97d58f205807b247
+    reading/themes/tron: afd746ae5036d3462f7b033c38f5a133
+    reading/speechRecognition/notSupported: d49193aef04a9db91e11c54eb2fe0c22
+    reading/speechRecognition/recognized: 9f70e977c492377f44b325ecdd6acaf4
+    reading/speechRecognition/stopRecording: a6e9fbaf4ebf2d78558608d78a79ab7b
+    reading/speechRecognition/startRecording: 1120c5e5a7a2675d0e7f8cd11afe6cd3
+    reading/speechRecognition/clickToStop: f78ca9a9d8282cd475dfb429cfd4519a
+    reading/speechRecognition/clickToStart: 6d257651c87b619916b8f79f6c9cf60c
+    reading/speechRecognition/listening: 71b5c9aaf83ba1d3718e3cb0cc961362
+    reading/speechRecognition/typeOrSpeak: 85497bd4e8af8f57829cb7cfc7186cb4
+    reading/speechRecognition/charsLeft: 2a9cbefa919bd4221b1bc6501ca8954d
+    reading/speechRecognition/minCharsRequired: f92d35e4d83f8a2676d8f4f679da878b
+    achievements/title: b8630556f011d979c83adde81fb028ff
+    achievements/subtitle: 0851e7419e7231b7b26a5fb64220c1ac
+    achievements/unlockedCount: 5e45d23ef533680a753e0c8d3cef2adf
+    achievements/progressPercent: 4941ad96b17bf9b8bbe23e5e15cc584a
+    achievements/filterAll: 5e2e93f8e2a5f315b6fecdd0a0e6f55f
+    achievements/filterUnlocked: 7bedb42ceeb989efa04e501555caadb3
+    achievements/filterLocked: 30950d887a19841aa481091affd091e6
+    achievements/filterReading: 9d93f1dff4a01a9e1566f23b401b8868
+    achievements/filterLanguage: 277fd1a41cc237a437cd1d5e4a80463b
+    achievements/filterPet: 1031e5e8b02fb8668cd0b1c696722046
+    achievements/filterStreak: 27f854f4b2b6fe3d9740c877d79d32cb
+    achievements/sortRecent: 2cef23d0cf0a6cabe9b8cf749549d6c7
+    achievements/sortProgress: dd0200d5849ebb7d64c15098ae91d229
+    achievements/sortAlphabetical: 02cd19875772ae150ced877de092c0f3
+    achievements/sortRarity: 19b5baded0543fe753cec3f4e1c9aac5
+    achievements/search: 46e5a268993ccbc654b3dce585dadb30
+    achievements/noResults: 5acfb0a87884fcb4371b053edc7c6707
+    achievements/nextGoal: 5ee5f6dfdf49673dd236ef33abf94e16
+    achievements/weeklyStats: 2aa6359fe30cab6dedac758faaaa1943
+    achievements/xpGained: 8e00aacc0397c25bc72fe284fc173924
+    achievements/passagesRead: 5a59465d6294c6762f4f35ae469ef1b0
+    achievements/quizzesCompleted: c11bbf374b88c2d3c37d14dfca38b4dd
+    achievements/gemsEarned: 131afcc3f23c680fec4b7c6b4df05e34
+    achievements/keepGoing: 84dd6c5107e5ac338abf899df349e76a
+    achievements/youreDoingGreat: d775a2cde80ad847537258680ac2d019
+    shop/title: 6d365433a6d65f9ec3dd4853aa2439d9
+    shop/subtitle: 16272e166039422bb9f7c2bb75ee8af7
+    shop/balance: 8fb6dfa72c6be84db4a8afb8fc699173
+    shop/tabs/foods: 60ff39f1b98328057b0927b2c1f5e5e6
+    shop/tabs/cosmetics: 34895c903f5b6adbaa473eeb49e030e8
+    shop/tabs/powerups: 548536d37f6063178a52b505366f9c4d
+    shop/sections/koreanFoods: a5053e1c5c936a54017a30b5a113be2d
+    shop/sections/chineseFoods: b72ac001c43c825bd4495dff524cf2c6
+    shop/sections/knowledgeCosmetics: e43a1ba9e0a67bd6b4d933d2a29bd375
+    shop/sections/coolnessCosmetics: 470bd0eca2b3cda1fcfd038c24724537
+    shop/sections/cultureCosmetics: 981403ececb771bc35b7f4921f1bef64
+    shop/purchase: 8047e4f1fa2c312dde88dc0f7003eb4b
+    shop/purchased: 99a83e76263d4001a176edb081a11173
+    shop/notEnoughCoins: f15cd6c921815efe7cfd79838d13fe21
+    shop/notEnoughGems: 51e3776ad08e5a2632294ab234eebdae
+    shop/purchaseFailed: 11c709f8a07f4a8e0f1cac7435888eb0
+    shop/purchaseSuccess: 3999aac233d157c71134cd1e45b454f0
+    shop/confirmPurchase: 5284ef707a3d1d263ac53ab805e902fd
+    shop/itemsAvailable: d430a28a150668a1ae8ebcebda1328ec
+    progress/title: dd0200d5849ebb7d64c15098ae91d229
+    progress/subtitle: 92eb7ac7145f017464fee5cc8bcab7c0
+    profile/title: d7878693f91303a438852d617f6d35df
+    profile/subtitle: 8b30288e436898e8546a6799cc321310
+    library/title: 512895070bcbba02f534d584e7028ef4
+    library/subtitle: 8fd365d05dfbec4cf1246b8d0feed5c1
     common/loading: 82b4ea7ed1439094d7c4be13aaba9a66
     common/save: f7a2929f33bc420195e59ac5a8bcd454
     common/cancel: 2e2a849c2223911717de8caa2c71bade
@@ -52,7 +163,42 @@ checksums:
     common/close: 2c2e22f8424a1031de89063bd0022e16
     common/back: f541015a827e37cb3b1234e56bc2aa3c
     common/next: 89ddbcf710eba274963494f312bdc8a9
+    common/stats: 5cf8b052c89fa1b05397a956ebec69b2
     errors/userLoadFailed: 28a5aa02ec629e77ece07a2df3c9b6b5
     errors/storyGenerationFailed: 8c528f6e43e3a0cc67b38af6562c8d77
     errors/networkError: 9b4567af23c9955aca06ca2080a6f79e
     errors/invalidInput: 3b2358f31754a6e34d455b40ad9b27c1
+    pet/learningBuddy: 67b0241f70bdf79baa37e61eff22dede
+    pet/tracks/knowledge: e43a1ba9e0a67bd6b4d933d2a29bd375
+    pet/tracks/coolness: 470bd0eca2b3cda1fcfd038c24724537
+    pet/tracks/culture: 981403ececb771bc35b7f4921f1bef64
+    pet/stats/happiness: 64c2075abddde53cb0a10487124c5d44
+    pet/stats/happinessLevel: 12ce02f01c7e65be99ad831a2c60e55f
+    pet/stats/hunger: bff7fe95ce973141256ad8e50118637e
+    pet/stats/hungerLevel: ef3b9d84ed6a4ec8ab535cc1d6adc42f
+    pet/stats/energy: 958809db5050650b97519e0f1f3e1951
+    pet/stats/energyLevel: 391dd9f31517534b0fc260e416169aaf
+    pet/evolution/progress: 4b9a03e8039e72ddab929b883450f635
+    pet/evolution/progressLabel: 11566b27972cef61fb3dd62b89be0197
+    pet/evolution/stage: 9155288e13cf0e316b987bc724553945
+    pet/evolution/readyToEvolve: f7f30fe43ce865bf2cde31c6ebef2c80
+    pet/evolution/next: 8d8ee5a39337cfb640607e366d7833fb
+    pet/evolution/levelsToGo: 62bbb78b204fb151b1c70b6e6c58945b
+    pet/evolution/maxReached: d07556f830181962ab5909b36c176c63
+    pet/evolution/evolveButton: 33f3bdde06c56dd9f97b2d2a0f733d73
+    pet/actions/feed: c43580f7c529b87a9339a169b66e3f7d
+    pet/actions/menu: 520968a9770cddeb6d339c0fcbd70240
+    pet/actions/feedLabel: 41bd782b2bfdecd281e753ef5a8048a3
+    pet/actions/play: 027e225503c43b6e9cc9698e70c2736a
+    pet/actions/playLabel: 785759c1ab49090671b68272e64ef592
+    pet/actions/boost: 3d46c5d28fa8318d6ef0c0bd274ce320
+    pet/actions/boostLabel: 690f130f8da0c0f86c4bcaaae2e96ec3
+    pet/status/hungry: 3b219128704b5c9d8d0c964f0d605338
+    pet/status/tired: cafca5ccc77c4c140d1ba94cd25694ab
+    pet/status/happy: 3e16f85f320c3b0749b8f4ff752d55c5
+    pet/navigation/shop: 6d365433a6d65f9ec3dd4853aa2439d9
+    pet/navigation/shopLabel: b6faba365df211b95199f6c72eca0bd6
+    pet/navigation/badges: a11ad9f87d9fa5c44b857d8c6e0d23d4
+    pet/navigation/badgesLabel: f5aa420a9f9ddceb7aa7a241b7ad7c1a
+    pet/navigation/stats: 5cf8b052c89fa1b05397a956ebec69b2
+    pet/navigation/statsLabel: 965de85e6c5c27502229f8d371bbe984

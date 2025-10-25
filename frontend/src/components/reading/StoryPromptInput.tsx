@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/common/Button';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { StorySettings, LanguageSettings } from '@/types/story';
@@ -20,6 +21,7 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
   onGenerate,
   isGenerating = false,
 }) => {
+  const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -61,7 +63,7 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
   const handleMicrophoneClick = () => {
     // Check browser support
     if (!isSupported) {
-      setErrorMessage('Speech recognition is not supported in your browser. Please try Chrome, Edge, or Safari.');
+      setErrorMessage(t('reading.speechRecognition.notSupported'));
       setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
@@ -70,7 +72,7 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
       // Stop recording
       stopListening();
       if (transcript.trim()) {
-        setSuccessMessage('Speech recognized successfully!');
+        setSuccessMessage(t('reading.speechRecognition.recognized'));
         setTimeout(() => setSuccessMessage(null), 3000);
       }
       resetTranscript();
@@ -89,18 +91,18 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
       {/* Story Prompt Input */}
       <div className="relative">
         <label htmlFor="story-prompt" className="block text-child-sm font-semibold text-gray-700 mb-2">
-          Story Prompt
+          {t('reading.storyPrompt')}
         </label>
         <div className="relative">
           <textarea
             id="story-prompt"
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
-            placeholder="A fun adventure about Pikachu playing basketball with Team Rocket..."
+            placeholder={t('reading.storyPromptPlaceholder')}
             className="w-full p-3 pr-12 border-2 border-gray-300 rounded-lg text-child-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             rows={8}
             maxLength={maxChars}
-            aria-label="Story prompt text area"
+            aria-label={t('reading.storyPrompt')}
             disabled={isGenerating}
           />
           <button
@@ -110,9 +112,9 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
                 ? 'bg-red-500 text-white animate-pulse'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
-            aria-label={isListening ? 'Stop recording' : 'Start recording'}
+            aria-label={isListening ? t('reading.speechRecognition.stopRecording') : t('reading.speechRecognition.startRecording')}
             disabled={isGenerating}
-            title={isListening ? 'Click to stop recording' : 'Click to start recording'}
+            title={isListening ? t('reading.speechRecognition.clickToStop') : t('reading.speechRecognition.clickToStart')}
           >
             <span className="text-lg" aria-hidden="true">🎤</span>
           </button>
@@ -130,13 +132,13 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
             ) : (
               <p className="text-[11px] text-gray-600 italic">
                 {isListening
-                  ? '🔴 Listening... Speak your story idea now!'
-                  : 'Type your story idea or click 🎤 to speak it'}
+                  ? `🔴 ${t('reading.speechRecognition.listening')}`
+                  : t('reading.speechRecognition.typeOrSpeak')}
               </p>
             )}
           </div>
           <p className={`text-[11px] font-semibold ml-2 ${charsRemaining < 50 ? 'text-red-600' : 'text-gray-600'}`}>
-            {charsRemaining} chars left
+            {t('reading.speechRecognition.charsLeft', { count: charsRemaining })}
           </p>
         </div>
       </div>
@@ -148,18 +150,18 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
         onClick={onGenerate}
         disabled={!canGenerate || isGenerating}
         className="w-full bg-gradient-to-r from-primary-500 via-purple-500 to-accent-500 hover:from-primary-600 hover:via-purple-600 hover:to-accent-600 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4"
-        aria-label="Generate story"
+        aria-label={t('reading.generateButton')}
       >
         <span className="text-child-lg font-bold flex items-center justify-center gap-2">
           {isGenerating ? (
             <>
               <span className="animate-spin">⏳</span>
-              <span>Generating Story...</span>
+              <span>{t('reading.generating')}</span>
             </>
           ) : (
             <>
               <span aria-hidden="true">🌟</span>
-              <span>Generate Story</span>
+              <span>{t('reading.generateButton')}</span>
             </>
           )}
         </span>
@@ -167,7 +169,7 @@ export const StoryPromptInput: React.FC<StoryPromptInputProps> = ({
 
       {!canGenerate && (
         <p className="text-[11px] text-red-600 text-center italic">
-          Please enter at least 10 characters to generate a story
+          {t('reading.speechRecognition.minCharsRequired')}
         </p>
       )}
     </div>
