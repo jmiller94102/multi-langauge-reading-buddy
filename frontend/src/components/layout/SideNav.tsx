@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NAV_ITEMS } from '@/types/navigation';
 import { cn } from '@/lib/utils';
+import { SecondaryLanguageSelector } from '@/components/common/SecondaryLanguageSelector';
+import type { SecondaryLanguage } from '@/types/story';
 
 export const SideNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Manage secondary language with localStorage
+  const [secondaryLanguage, setSecondaryLanguage] = useState<SecondaryLanguage>(() => {
+    const saved = localStorage.getItem('secondaryLanguage');
+    return (saved as SecondaryLanguage) || 'ko';
+  });
+
+  // Persist secondary language to localStorage
+  useEffect(() => {
+    localStorage.setItem('secondaryLanguage', secondaryLanguage);
+  }, [secondaryLanguage]);
 
   return (
     <nav
@@ -14,6 +27,15 @@ export const SideNav: React.FC = () => {
       aria-label="Main navigation"
     >
       <div className="flex flex-col gap-2 p-4">
+        {/* Secondary Language Selector */}
+        <div className="mb-4 pb-4 border-b border-gray-200">
+          <SecondaryLanguageSelector
+            selectedLanguage={secondaryLanguage}
+            onChange={setSecondaryLanguage}
+          />
+        </div>
+
+        {/* Navigation Items */}
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.path;
           return (

@@ -34,6 +34,11 @@ A PRP is a detailed implementation guide for a specific feature, containing:
 - [ ] `offline-sync-implementation.md` - Sync localStorage to backend API
 - [ ] `migration-strategy.md` - Migrate from localStorage to API
 
+### Phase 8: S2.dev Integration (Classroom & Branching)
+- [ ] `s2-live-classroom-monitoring.md` - **KILLER FEATURE** Real-time teacher dashboard ($90k/year)
+- [ ] `s2-branching-stories.md` - Choose-your-own-adventure with story branches
+- [ ] `s2-analytics-dashboard.md` - Reading session tracking (OPTIONAL - only if needed)
+
 ### Phase 8: BONUS
 - [ ] `audio-generation.md` - TTS with forced alignment for word timings
 
@@ -54,4 +59,16 @@ Backend integration PRPs are for Phase 7 (POST-MVP).
 Mark PRPs as completed by checking the box in this README.
 
 **Current PRP**: _None (not started)_
-**Last Updated**: 2025-10-11
+**Last Updated**: 2025-10-23
+
+## 🔗 PRP Dependencies
+
+**S2.dev Integration PRPs** (Phase 8):
+- `s2-live-classroom-monitoring.md` → **START HERE** (killer feature, $90k/year revenue)
+- `s2-branching-stories.md` → Independent (can build in parallel or after classroom)
+- `s2-analytics-dashboard.md` → OPTIONAL (only if classroom monitoring isn't enough)
+
+**Recommended Order**: 
+1. Classroom Monitoring (3 weeks) - Highest ROI
+2. Branching Stories (2 weeks) - High engagement
+3. Analytics Dashboard (skip unless needed) - Complex, uncertain value

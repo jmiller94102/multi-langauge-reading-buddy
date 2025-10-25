@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LevelUpCelebration } from './components/animations/LevelUpCelebration';
 import { ToastContainer } from './components/common/ToastContainer';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
+import { SessionIndicator } from './components/common/SessionIndicator';
 import { useUser } from './contexts/UserContext';
 
 // Lazy load pages for code splitting
@@ -16,6 +17,8 @@ const Achievements = lazy(() => import('./pages/Achievements').then(m => ({ defa
 const Shop = lazy(() => import('./pages/Shop').then(m => ({ default: m.Shop })));
 const Progress = lazy(() => import('./pages/Progress').then(m => ({ default: m.Progress })));
 const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
+const StudentLobby = lazy(() => import('./pages/StudentLobby').then(m => ({ default: m.StudentLobby })));
 const ComponentShowcase = lazy(() => import('./pages/ComponentShowcase').then(m => ({ default: m.ComponentShowcase })));
 
 // Global Celebrations Component
@@ -61,6 +64,8 @@ const AnimatedRoutes = () => {
             <Route path="/shop" element={<Shop />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/teacher" element={<TeacherDashboard />} />
+            <Route path="/lobby" element={<StudentLobby />} />
 
             {/* Component showcase for testing */}
             <Route path="/showcase" element={<ComponentShowcase />} />
@@ -81,6 +86,7 @@ function App() {
         <Router>
           <GlobalCelebrations />
           <ToastContainer />
+          <SessionIndicator />
           <AnimatedRoutes />
         </Router>
       </AppProviders>

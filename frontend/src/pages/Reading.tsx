@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import type { SidebarTab as SidebarTabType } from '@/components/layout/CollapsibleSidebar';
 import { StorySettings } from '@/components/reading/StorySettings';
@@ -22,6 +22,8 @@ import { calculateXPMultiplier, calculateCoinBonus } from '@/data/petEvolution';
 import { NAV_ITEMS } from '@/types/navigation';
 import { storyLibrary, type SavedStory } from '@/services/storyLibraryService';
 import { useToast } from '@/contexts/ToastContext';
+import { useClassroomTracking } from '@/hooks/useClassroomTracking';
+import { useSession } from '@/contexts/SessionContext';
 
 type ReadingState = 'input' | 'generating' | 'reading' | 'quiz' | 'complete';
 
@@ -29,6 +31,7 @@ export const Reading: React.FC = () => {
   // Navigation
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // Context integration
   const { user, addXP, addCoins, updateStats } = useUser();
@@ -49,6 +52,40 @@ export const Reading: React.FC = () => {
   // Library state
   const [savedStories, setSavedStories] = useState<SavedStory[]>([]);
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'ko' | 'zh'>('all');
+
+  // Classroom tracking with SessionContext
+  const { sessionId: contextSessionId, studentId: contextStudentId, isConnected } = useSession();
+  const totalParagraphs = story?.paragraphs?.length || story?.primarySentences?.filter(s => s === '__PARAGRAPH_BREAK__').length || 0;
+  
+  const { isTracking } = useClassroomTracking({
+    sessionId: contextSessionId || undefined,
+    studentId: contextStudentId || user.id,
+    totalParagraphs,
+    enabled: currentState === 'reading' && isConnected,
+  });
+
+  // Load teacher's story if in teacher-led session
+  useEffect(() => {
+    const loadTeacherStory = async () => {
+      if (contextSessionId && !story) {
+        try {
+          const response = await fetch(`http://localhost:8080/api/classroom/session/${contextSessionId}/story`);
+          const data = await response.json();
+          
+          if (data.success && data.story) {
+            setStory(data.story);
+            setQuiz(data.quiz);
+            setCurrentState('reading');
+            showToast('Loaded teacher\'s story', 'success');
+          }
+        } catch (error) {
+          console.log('No teacher story set for session');
+        }
+      }
+    };
+
+    loadTeacherStory();
+  }, [contextSessionId, story]);
 
   // Load saved stories on mount
   useEffect(() => {

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
+import { PrimaryLanguageSelector } from '@/components/common/PrimaryLanguageSelector';
 
 interface HeaderProps {
   className?: string;
@@ -35,8 +36,11 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
           </span>
         </button>
 
-        {/* Currency Display */}
+        {/* Currency Display and Language Selector */}
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Primary Language Selector */}
+          <PrimaryLanguageSelector />
+
           {/* Coins */}
           <div
             className="flex items-center gap-1.5 bg-gradient-to-br from-yellow-50 to-yellow-100 px-3 py-1.5 rounded-full border border-yellow-200"

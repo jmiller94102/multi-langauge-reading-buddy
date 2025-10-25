@@ -387,7 +387,11 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                 }
 
                 return paragraphs.map((paragraphSentences, pIdx) => (
-                  <p key={`paragraph-${pIdx}`} className="text-child-base leading-relaxed text-gray-900">
+                  <p 
+                    key={`paragraph-${pIdx}`} 
+                    className="text-child-base leading-relaxed text-gray-900"
+                    data-paragraph-index={pIdx}
+                  >
                     {paragraphSentences.map((sentence, sIdx) => (
                       <span
                         key={`sentence-${pIdx}-${sIdx}`}
@@ -409,8 +413,12 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
           ) : (
             // FALLBACK: Legacy paragraph-based rendering
             <div className="space-y-4">
-              {story.paragraphs?.map((paragraph) => (
-                <p key={paragraph.id} className="text-child-base leading-relaxed text-gray-900">
+              {story.paragraphs?.map((paragraph, pIdx) => (
+                <p 
+                  key={paragraph.id} 
+                  className="text-child-base leading-relaxed text-gray-900"
+                  data-paragraph-index={pIdx}
+                >
                   {paragraph.content}
                 </p>
               ))}

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { LanguageSettings as LanguageSettingsType, SecondaryLanguage } from '@/types/story';
+import { SecondaryLanguageSelector } from '@/components/common/SecondaryLanguageSelector';
 
 interface LanguageSettingsProps {
   settings: LanguageSettingsType;
@@ -31,39 +32,10 @@ export const LanguageSettings: React.FC<LanguageSettingsProps> = ({ settings, on
       </h3>
 
       {/* Secondary Language Selection */}
-      <div>
-        <label className="block text-child-xs font-semibold text-gray-700 mb-1">
-          Secondary Language:
-        </label>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleLanguageChange('ko')}
-            className={`flex-1 py-1.5 px-2 rounded-lg font-semibold text-child-xs transition-all flex items-center justify-center gap-1.5 ${
-              settings.secondaryLanguage === 'ko'
-                ? 'bg-primary-500 text-white shadow-md'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-            aria-label="Select Korean as secondary language"
-            aria-pressed={settings.secondaryLanguage === 'ko'}
-          >
-            <span className="text-base" aria-hidden="true">🇰🇷</span>
-            <span>Korean</span>
-          </button>
-          <button
-            onClick={() => handleLanguageChange('zh')}
-            className={`flex-1 py-1.5 px-2 rounded-lg font-semibold text-child-xs transition-all flex items-center justify-center gap-1.5 ${
-              settings.secondaryLanguage === 'zh'
-                ? 'bg-primary-500 text-white shadow-md'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-            aria-label="Select Mandarin as secondary language"
-            aria-pressed={settings.secondaryLanguage === 'zh'}
-          >
-            <span className="text-base" aria-hidden="true">🇨🇳</span>
-            <span>Mandarin</span>
-          </button>
-        </div>
-      </div>
+      <SecondaryLanguageSelector
+        selectedLanguage={settings.secondaryLanguage}
+        onChange={handleLanguageChange}
+      />
 
       {/* Blend Level Slider */}
       <div className="bg-primary-50 rounded-lg p-2 border border-primary-200">

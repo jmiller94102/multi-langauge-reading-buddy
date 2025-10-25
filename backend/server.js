@@ -552,6 +552,10 @@ app.post('/api/generate-audio', async (req, res) => {
   }
 });
 
+// Classroom monitoring routes
+const classroomRoutes = require('./routes/classroom.routes');
+app.use('/api/classroom', classroomRoutes);
+
 // Export for testing
 module.exports = app;
 
@@ -563,9 +567,13 @@ if (require.main === module) {
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`   Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5174'}`);
     console.log(`   Azure OpenAI: ${process.env.AZURE_OPENAI_ENDPOINT ? '✓ Configured' : '✗ Not configured'}`);
+    console.log(`   S2.dev: ${process.env.S2_ACCESS_TOKEN ? '✓ Configured' : '✗ Not configured'}`);
     console.log('\n📡 API Endpoints:');
     console.log(`   GET  http://localhost:${PORT}/api/health`);
     console.log(`   POST http://localhost:${PORT}/api/generate-audio`);
+    console.log(`   POST http://localhost:${PORT}/api/classroom/create-session`);
+    console.log(`   POST http://localhost:${PORT}/api/classroom/update-progress`);
+    console.log(`   GET  http://localhost:${PORT}/api/classroom/subscribe/:sessionId`);
     console.log('\n🔒 API keys are securely stored in backend/.env');
     console.log('   Never exposed to frontend!\n');
   });
